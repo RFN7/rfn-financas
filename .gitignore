@@ -1,0 +1,19 @@
+# deps / build
+node_modules/
+dist/
+.cache/
+# ambiente
+.env
+.env.*
+!.env.example
+# firebase
+.firebase/
+firebase-debug.log
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# testes
+test-results/
+playwright-report/
