@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
 <title>Ganhos & Gastos</title>
 <meta name="description" content="Caderninho simples de ganhos, gastos e parcelas">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -268,6 +269,44 @@ const realMonth=todayISO.slice(0,7);
 const LS='rfn.ganhos.v1';
 let state=null, db=null, curMonth=todayISO.slice(0,7), addType='out';
 
+/* ===== Sincronização na nuvem (Supabase) — Mac ↔ celular ===== */
+const SB_URL='https://lckyrmhlrvuprkbqapez.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxja3lybWhscnZ1cHJrYnFhcGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0MTg3NDEsImV4cCI6MjA5OTk5NDc0MX0.Mou5NqTynvHPj5g1C2DT_lx8PyZ-353JBSL0K80bJK4';
+const SB_ROW='rfn7-cofre-a7Fk29Lm4Qx8'; // "conta" compartilhada entre seus aparelhos
+function makeSupaDb(){
+  const base=SB_URL+'/rest/v1/ledger';
+  const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  function docRef(){
+    return {
+      async get(){
+        try{
+          const r=await fetch(base+'?id=eq.'+encodeURIComponent(SB_ROW)+'&select=data,updated_at',{headers:H});
+          if(!r.ok)return {exists:false,data:()=>({})};
+          const rows=await r.json();
+          if(!rows.length)return {exists:false,data:()=>({})};
+          const d=rows[0].data||{}; if(rows[0].updated_at!=null)d.updatedAt=rows[0].updated_at;
+          return {exists:true,data:()=>d};
+        }catch(e){return {exists:false,data:()=>({})};}
+      },
+      async set(obj){
+        const body=[{id:SB_ROW,data:obj,updated_at:obj.updatedAt||Date.now()}];
+        const r=await fetch(base,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
+        if(!r.ok)throw new Error('supabase '+r.status);
+      },
+      onSnapshot(next,err){
+        let stop=false;
+        const tick=async()=>{ if(stop)return;
+          try{ const s=await docRef().get(); if(s.exists)next(s); }catch(e){ if(err)err(e); }
+          if(!stop)setTimeout(tick,4000);
+        };
+        setTimeout(tick,4000);
+        return ()=>{stop=true;};
+      }
+    };
+  }
+  return { doc(){ return docRef(); } };
+}
+
 function seed(){
   // updatedAt 0: um estado novo/vazio NUNCA pode vencer dados reais do servidor (evita apagar tudo)
   return {theme:'dark', entries:[], boxes:[], updatedAt:0};
@@ -392,7 +431,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v8 · exclusão à prova de sync</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v9 · sincronizado na nuvem ☁️</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -1016,8 +1055,7 @@ if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];
 renderTabs();render();saveLocal();
 
 (async()=>{try{
-  if(!window.claude||!window.claude.use)return;
-  db=await window.claude.use('db');if(!db)return;
+  db=makeSupaDb();if(!db)return;
   const ref=db.doc('ledger/data');
   const snap=await ref.get();
   const adopt=(data)=>{state=data;normalize();applyTheme();if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];renderTabs();render();saveLocal();};
@@ -1046,3 +1084,5 @@ renderTabs();render();saveLocal();
   flushDb(); // envia edições feitas durante o carregamento (antes do banco conectar)
 }catch(e){}})();
 </script>
+
+</body></html>
