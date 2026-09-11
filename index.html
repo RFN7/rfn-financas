@@ -306,6 +306,28 @@ function makeSupaDb(){
   }
   return { doc(){ return docRef(); } };
 }
+/* ===== IA de importação (via função no Supabase, chave protegida no servidor) ===== */
+function makeSupaSample(){
+  const fnUrl=SB_URL+'/functions/v1/analyze';
+  const blobB64=(blob)=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',').pop());r.onerror=rej;r.readAsDataURL(blob);});
+  return {
+    limits(){return Promise.resolve({images:{maxCount:8,mediaTypes:['image/jpeg','image/png','image/webp','image/gif']}});},
+    async json(prompt,opts={}){
+      const {images=[],signal}=opts;
+      const imgs=[];
+      for(const b of images){ try{ imgs.push({media_type:(b.type||'image/jpeg'),data:await blobB64(b)}); }catch(e){} }
+      const r=await fetch(fnUrl,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','x-rfn-key':SB_ROW},body:JSON.stringify({prompt,images:imgs}),signal});
+      if(!r.ok)throw new Error('IA '+r.status+': '+(await r.text().catch(()=>'')));
+      return await r.json();
+    },
+    async text(prompt){
+      const r=await fetch(fnUrl,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','x-rfn-key':SB_ROW},body:JSON.stringify({prompt,mode:'text'})});
+      if(!r.ok)throw new Error('IA '+r.status+': '+(await r.text().catch(()=>'')));
+      const d=await r.json();
+      return d.text||'';
+    }
+  };
+}
 
 function seed(){
   // updatedAt 0: um estado novo/vazio NUNCA pode vencer dados reais do servidor (evita apagar tudo)
@@ -335,6 +357,7 @@ function normalize(){
   if(!state)return;
   if(!state.theme)state.theme='dark';
   if(!Array.isArray(state.boxes))state.boxes=[];
+  state.metaMes=+state.metaMes||0; // meta de gasto mensal (0 = sem meta)
   // saneia cada lançamento para nunca quebrar a tela (data válida, valor numérico, tipo/parcela ok)
   state.entries=(Array.isArray(state.entries)?state.entries:[]).filter(e=>e&&typeof e==='object').map(e=>{
     let d=String(e.date||'');
@@ -391,8 +414,11 @@ function askConfirm(msg,onYes){
   md.querySelector('#ac-yes').onclick=()=>{root.innerHTML='';onYes();};
 }
 let tab='main', listMode='day', editId=null;
-const CATEMOJI={mercado:'🛒',alimentacao:'🍔','alimentação':'🍔',restaurante:'🍔',transporte:'🚗',combustivel:'⛽','combustível':'⛽',uber:'🚗',farmacia:'💊','farmácia':'💊',saude:'🏋️','saúde':'🏋️',academia:'🏋️',vestuario:'👕','vestuário':'👕',roupa:'👕',lazer:'🎬',assinatura:'📱',assinaturas:'📱',streaming:'📱',casa:'🏠',moradia:'🏠',aluguel:'🏠',educacao:'📚','educação':'📚',pets:'🐶',pet:'🐶',presentes:'🎁',presente:'🎁',compras:'🛍️',mercadolivre:'🛍️',amazon:'🛍️',salario:'💼','salário':'💼',renda:'💼',freela:'💻',investimento:'📈',outros:'📦'};
+const CATEMOJI={'contas de casa':'🏠','conta de casa':'🏠',condominio:'🏠','condomínio':'🏠',agua:'🏠','água':'🏠',luz:'🏠',energia:'🏠',gas:'🏠','gás':'🏠',telefone:'🏠',internet:'🏠',iptu:'🏠',mercado:'🛒',alimentacao:'🍔','alimentação':'🍔',restaurante:'🍔',transporte:'🚗',combustivel:'⛽','combustível':'⛽',uber:'🚗',farmacia:'💊','farmácia':'💊',saude:'🏋️','saúde':'🏋️',academia:'🏋️',vestuario:'👕','vestuário':'👕',roupa:'👕',lazer:'🎬',assinatura:'📱',assinaturas:'📱',streaming:'📱',casa:'🏠',moradia:'🏠',aluguel:'🏠',educacao:'📚','educação':'📚',pets:'🐶',pet:'🐶',presentes:'🎁',presente:'🎁',compras:'🛍️',mercadolivre:'🛍️',amazon:'🛍️',salario:'💼','salário':'💼',renda:'💼',freela:'💻',investimento:'📈',outros:'📦'};
 function catEmoji(c){return CATEMOJI[(c||'').toLowerCase().trim()]||'📦';}
+const CATS_OUT=['Contas de casa','Mercado','Alimentação','Restaurante','Transporte','Combustível','Saúde','Farmácia','Assinaturas','Lazer','Educação','Compras','Pets','Vestuário','Presentes','Outros'];
+const CATS_IN=['Salário','Renda','Freela','Investimento','Presente','Outros'];
+function catOptions(type){return (type==='in'?CATS_IN:CATS_OUT).map(c=>'<option value="'+c+'">').join('');}
 function renderTabs(){
   const tb=$('#tabbar');tb.innerHTML='';
   [['main','📒 Lançamentos'],['import','📎 Importar'],['sugestoes','💡 Sugestões'],['caixinhas','🐷 Caixinhas']].forEach(([k,label])=>{
@@ -431,7 +457,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v9 · sincronizado na nuvem ☁️</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v16 · sync + IA + meta + categorias + PIN 🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -458,6 +484,19 @@ function render(){try{
     pinfo.appendChild(st); }
   const falta=faltaParcelas();
   if(falta>0){ pinfo.appendChild(el('div','parcstrip','<span>💳</span><span>Parcelas em aberto — falta pagar</span><span class="v">'+fmts(falta)+'</span>')); }
+  // alerta de meta mensal de gastos
+  if(state.metaMes>0){
+    const mm=state.metaMes, pctm=out/mm*100;
+    if(out>mm){
+      const s=el('div','parcstrip');s.style.cssText='display:flex;align-items:center;gap:10px;background:var(--out-soft);border:1px solid var(--out);border-radius:12px;padding:10px 13px;margin-bottom:10px;font-size:13px;color:var(--out)';
+      s.innerHTML='<span>🚨</span><span>Passou da meta de gastos do mês</span><span style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;font-weight:700">+'+fmts(out-mm)+'</span>';
+      pinfo.appendChild(s);
+    } else if(pctm>=80){
+      const s=el('div','parcstrip');s.style.cssText='display:flex;align-items:center;gap:10px;background:var(--parc-soft);border:1px solid #ffb02055;border-radius:12px;padding:10px 13px;margin-bottom:10px;font-size:13px';
+      s.innerHTML='<span>⚠️</span><span>Chegando na meta ('+pctm.toFixed(0)+'%)</span><span style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;font-weight:700;color:var(--parc)">restam '+fmts(mm-out)+'</span>';
+      pinfo.appendChild(s);
+    }
+  }
 
   // add box
   const ab=$('#addbox');ab.innerHTML='';
@@ -471,7 +510,9 @@ function render(){try{
   frm.innerHTML=`<input class="desc" id="a-desc" placeholder="Anotação (ex: ${addType==='in'?'Salário, freela':'Mercado, Tênis'})">
     <input class="amt" id="a-amt" type="text" inputmode="decimal" placeholder="valor">
     ${addType==='out'?`<input class="parc" id="a-parc" type="number" min="1" value="1" title="Parcelas" placeholder="1x">`:''}
-    <input class="dt" id="a-date" type="date" value="${curMonth===realMonth?todayISO:curMonth+'-10'}">`;
+    <input class="dt" id="a-date" type="date" value="${curMonth===realMonth?todayISO:curMonth+'-10'}">
+    <input id="a-cat" list="rfncats" placeholder="Categoria (ex: ${addType==='in'?'Salário':'Contas de casa, Mercado'})" style="flex:1 1 100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:var(--ink);outline:0">
+    <datalist id="rfncats">${catOptions(addType)}</datalist>`;
   ab.appendChild(frm);
   const chk=el('label','chk');chk.innerHTML='<input type="checkbox" id="a-recur"> 🔁 Fixo — repete todo mês';
   ab.appendChild(chk);
@@ -614,7 +655,9 @@ function addEntry(){
   const recur=$('#a-recur').checked;
   const pc=(!recur&&addType==='out')?Math.max(1,parseInt($('#a-parc').value)||1):1;
   if(!amt||amt<=0){$('#a-amt').focus();return;}
+  const catEl=$('#a-cat'); const cat=catEl?catEl.value.trim():'';
   const obj={id:uid(),type:addType,desc,amount:amt,date,parc:pc};
+  if(cat)obj.cat=cat;
   if(recur)obj.recur=true;
   state.entries.push(obj);
   curMonth=monthKey(date);
@@ -634,7 +677,7 @@ function buildEditPanel(e){
   wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><b style="font-size:16px">✏️ Editar</b></div>
     <div class="seg" style="margin-bottom:11px"><button id="ep-in" class="${e.type==='in'?'on in':''}">＋ Ganho</button><button id="ep-out" class="${e.type!=='in'?'on out':''}">− Gasto</button></div>
     <div class="field"><label>Anotação</label><input id="ep-desc" value="${esc(e.desc)}" placeholder="Descrição"></div>
-    <div class="field"><label>Categoria (opcional)</label><input id="ep-cat" value="${esc(e.cat||'')}" placeholder="Ex: Mercado, Transporte"></div>
+    <div class="field"><label>Categoria (opcional)</label><input id="ep-cat" list="rfncats2" value="${esc(e.cat||'')}" placeholder="Ex: Contas de casa, Mercado"><datalist id="rfncats2">${catOptions(e.type)}</datalist></div>
     <div class="frow2"><div class="field"><label>Valor (R$)</label><input id="ep-amt" type="text" inputmode="decimal" value="${String(e.amount).replace('.',',')}"></div>
     <div class="field" id="ep-parcwrap"><label>Parcelas</label><input id="ep-parc" type="number" min="1" value="${parcCount(e)}"></div></div>
     <div class="field"><label id="ep-datelbl">Data</label><input id="ep-date" type="date" value="${e.date}"></div>
@@ -724,21 +767,71 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ===== IMPORTAÇÃO COM IA ===== */
 let impText='', impFiles=[], impItems=null, lastImportIds=[], lastImportMonth=null, lastImportWarn='', lastImportDup=0, lastImportInst=0;
+function downloadResumo(added){
+  try{
+    const rows=[['Data','Descricao','Categoria','Tipo','Valor no mes','Parcelamento']];
+    added.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(a=>{
+      const mes=(a.parc>1?a.amount/a.parc:a.amount);
+      rows.push([a.date,(a.desc||'').replace(/[;\n]/g,' '),(a.cat||'Outros'),(a.type==='in'?'Ganho':'Gasto'),mes.toFixed(2).replace('.',','),(a.parc>1?(a.parc+'x — total '+a.amount.toFixed(2).replace('.',',')):'a vista')]);
+    });
+    const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+    const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='resumo-fatura-'+(lastImportMonth||todayISO.slice(0,7))+'.csv';
+    document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},600);
+  }catch(e){alert('Não consegui gerar o arquivo aqui.');}
+}
 function showImportResult(added){
-  const inc=added.filter(a=>a.type==='in').reduce((s,a)=>s+a.amount,0);
-  const out=added.filter(a=>a.type==='out').reduce((s,a)=>s+a.amount,0);
-  const months=[...new Set(added.map(a=>monthKey(a.date)))];
-  const monthTxt=months.length===1?('em <b>'+monthLabel(months[0])+'</b>'):('em '+months.length+' meses');
   const status=$('#imp-status');$('#imp-review').innerHTML='';
+  const outItems=added.filter(a=>a.type==='out'), inItems=added.filter(a=>a.type==='in');
+  const mesVal=a=>(a.parc>1?a.amount/a.parc:a.amount); // impacto no mês da fatura
+  const totalMes=outItems.reduce((s,a)=>s+mesVal(a),0);
+  const inc=inItems.reduce((s,a)=>s+a.amount,0);
+  const months=[...new Set(added.map(a=>monthKey(a.date)))];
+  const monthTxt=months.length===1?monthLabel(months[0]):(months.length+' meses');
+  // agrupa por categoria (impacto do mês)
+  const byCat={};
+  outItems.forEach(a=>{const c=(a.cat&&a.cat.trim())||'Outros';(byCat[c]=byCat[c]||{tot:0,n:0});byCat[c].tot+=mesVal(a);byCat[c].n++;});
+  const cats=Object.entries(byCat).sort((x,y)=>y[1].tot-x[1].tot);
+  const maxCat=cats.length?cats[0][1].tot:1;
+  // parcelamentos detectados
+  const parcs=added.filter(a=>a.parc>1);
+  const totalParc=parcs.reduce((s,a)=>s+a.amount,0);
+
   const card=el('div','imp');card.style.borderColor='#25e39b55';
-  card.innerHTML=`<h3 style="color:var(--in)">✅ ${added.length} lançamento(s) adicionados</h3>
-    <p class="sub" style="margin-bottom:10px">Já entraram no caderninho ${monthTxt}, cada um na sua data e categoria.${inc>0?' Ganhos <b style="color:var(--in)">+'+fmts(inc)+'</b>.':''}${out>0?' Gastos <b style="color:var(--out)">−'+fmts(out)+'</b>.':''}</p>${lastImportInst>0?'<p class="sub" style="margin-bottom:8px">🔗 <b>'+lastImportInst+' parcelamento(s)</b> identificado(s) — o detalhe e quando terminam ficam em "Parcelas em aberto".</p>':''}${lastImportDup>0?'<p class="sub" style="color:var(--muted);margin-bottom:8px">'+lastImportDup+' item(ns) já existiam e foram ignorados (importação acumulativa).</p>':''}${lastImportWarn?'<p class="sub" style="color:var(--warn);margin-bottom:12px">⚠️ '+lastImportWarn+'</p>':''}
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="addbtn" id="imp-see" style="flex:1;min-width:150px;margin:0">Ver no caderninho →</button>
-      <button class="btn ghost" id="imp-undo" style="flex:0 0 auto;padding:11px 16px">↩ Desfazer</button>
+  let html=`<h3 style="color:var(--in)">✅ Fatura analisada — ${added.length} lançamento(s)</h3>
+    <p class="sub" style="margin-bottom:12px">Tudo já entrou no caderninho (${monthTxt}), cada um na sua data e categoria.</p>
+    <div class="summary" style="margin-bottom:6px">
+      <div class="scard out"><div class="l">📉 Total de gastos</div><div class="v" style="font-size:19px">${fmts(totalMes)}</div></div>
+      <div class="scard ${inc>0?'in':''}"><div class="l">📈 Ganhos/estornos</div><div class="v" style="font-size:19px">${inc>0?'+'+fmts(inc):'—'}</div></div>
     </div>`;
+  // resumo por categoria
+  if(cats.length){
+    html+='<div style="margin:14px 0 4px;font-weight:600;font-size:14px">📇 Por categoria</div>';
+    cats.forEach(([c,d])=>{
+      const pct=Math.max(6,Math.round(d.tot/maxCat*100));
+      html+=`<div class="catbar"><span class="nm">${catEmoji(c)} ${esc(c)}</span><span class="tk"><i style="width:${pct}%"></i></span><span class="vv">${fmts(d.tot)}</span></div>`;
+    });
+  }
+  // parcelado / falta pagar
+  if(parcs.length){
+    html+=`<div style="margin:16px 0 4px;font-weight:600;font-size:14px">💳 Parcelado — falta pagar <span class="mono" style="color:var(--parc)">${fmts(totalParc)}</span></div>`;
+    parcs.slice().sort((a,b)=>b.amount-a.amount).forEach(a=>{
+      const fim=parcEnd(a);
+      html+=`<div class="tiprow" style="padding:8px 0"><span class="e">💳</span><div class="c"><b>${esc(a.desc)||'Parcelamento'}</b><p>${a.parc}x de ${fmt(a.amount/a.parc)} = <b>${fmt(a.amount)}</b> · termina ${MES[+fim.split('-')[1]-1].slice(0,3)}/${fim.slice(0,4)}</p></div></div>`;
+    });
+  }
+  if(lastImportDup>0)html+='<p class="sub" style="color:var(--muted);margin:12px 0 0">'+lastImportDup+' item(ns) já existiam e foram ignorados (não duplica).</p>';
+  if(lastImportWarn)html+='<p class="sub" style="color:var(--warn);margin:8px 0 0">⚠️ '+lastImportWarn+'</p>';
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button class="addbtn" id="imp-see" style="flex:1;min-width:140px;margin:0">Ver no caderninho →</button>
+      <button class="btn ghost" id="imp-csv" style="flex:0 0 auto;padding:11px 14px">⬇️ Baixar resumo</button>
+      <button class="btn ghost" id="imp-undo" style="flex:0 0 auto;padding:11px 14px">↩ Desfazer</button>
+    </div>`;
+  card.innerHTML=html;
   status.innerHTML='';status.appendChild(card);
   $('#imp-see').onclick=()=>{impFiles=[];impText='';if(lastImportMonth)curMonth=lastImportMonth;goTab('main');};
+  $('#imp-csv').onclick=()=>downloadResumo(added);
   $('#imp-undo').onclick=()=>{state.entries=state.entries.filter(e=>!lastImportIds.includes(e.id));lastImportIds=[];persist();status.innerHTML='<div class="status">Desfeito — nada foi adicionado.</div>';};
 }
 function renderImport(){
@@ -762,7 +855,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA.</div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v16 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
@@ -775,7 +868,7 @@ async function analyze(){
   const text=($('#imp-text').value||'').trim();
   const status=$('#imp-status');$('#imp-review').innerHTML='';impItems=null;
   if(!impFiles.length&&!text){status.innerHTML='<div class="status">Cole um texto ou anexe pelo menos um arquivo. 👆</div>';return;}
-  const sample=window.claude&&window.claude.use?await window.claude.use('sample').catch(()=>null):null;
+  const sample=makeSupaSample();
   if(!sample){status.innerHTML='<div class="status">⚠️ A análise por IA não está disponível aqui. Você ainda pode lançar manualmente na aba Lançamentos.</div>';return;}
   const ctrl=new AbortController();
   const MAXI=12;
@@ -799,8 +892,8 @@ async function analyze(){
         if(!accepted.includes(type)||f.size>5*1024*1024){ blob=await withTimeout(downscaleImage(f),15000,f); }
         if(accepted.includes(blob.type)) imgBlobs.push(blob); else skipped.push(f.name);
       } else if(type==='application/pdf'||/\.pdf$/i.test(f.name||'')){
-        if(canImg){ const bs=await withTimeout(pdfToImages(f,3),25000,null); if(bs&&bs.length)imgBlobs.push(...bs); else { const t=await withTimeout(extractPdfText(f),20000,''); if(t)textChunks.push(t); } }
-        else { const t=await withTimeout(extractPdfText(f),20000,''); if(t)textChunks.push(t); }
+        // A IA (Gemini) lê PDF direto — envia o arquivo, sem depender do pdf.js
+        imgBlobs.push(f);
       } else { const t=await f.text().catch(()=>''); if(t)textChunks.push(t); }
     }
     let capped=0;
@@ -809,7 +902,7 @@ async function analyze(){
     if(imgUnsupported&&!imgBlobs.length&&!realText){ status.innerHTML='<div class="status">⚠️ Este app não conseguiu enviar as imagens para a IA. Tente: (1) tirar um <b>print</b> da fatura em vez da foto, (2) colar o <b>texto</b> da fatura no campo acima, ou (3) importar pelo <b>computador</b> (claude.ai).</div>';return; }
     if(!imgBlobs.length&&skipped.length&&!realText){ status.innerHTML='<div class="status">⚠️ As imagens estão num formato que a IA não lê (ex.: <b>HEIC</b> do iPhone). Nas Configurações do iPhone → Câmera → Formatos, escolha "Mais Compatível", ou tire um <b>print</b> da fatura (que vira PNG) e anexe de novo.</div>';return; }
     const anoRef=curMonth.slice(0,4);
-    const baseRules='"out"=gasto/compra/pagamento, "in"=recebimento/crédito/salário/estorno. amount sempre POSITIVO com ponto decimal (ignore R$; 1.234,56 vira 1234.56). Se a data tiver só dia/mês use o ano '+anoRef+'. cat=categoria curta (Mercado, Alimentação, Transporte, Combustível, Farmácia, Saúde, Vestuário, Lazer, Assinatura, Casa, Educação, Pets, Compras, Outros). Se a compra for PARCELADA, preencha "parc" com "atual/total" (ex.: "02/04") e coloque em amount o valor DA PARCELA daquele mês (NÃO o total); se não for parcelada use "parc":"". NÃO invente; se não houver lançamentos devolva {"itens":[]}.';
+    const baseRules='"out"=gasto/compra/pagamento, "in"=recebimento/crédito/salário/estorno. amount sempre POSITIVO com ponto decimal (ignore R$; 1.234,56 vira 1234.56). Se a data tiver só dia/mês use o ano '+anoRef+'. cat=categoria curta (Contas de casa, Mercado, Alimentação, Transporte, Combustível, Farmácia, Saúde, Vestuário, Lazer, Assinaturas, Educação, Pets, Compras, Outros). IMPORTANTE: condomínio, água, luz/energia, gás, telefone, internet, aluguel e IPTU use SEMPRE cat "Contas de casa". Se a compra for PARCELADA, preencha "parc" com "atual/total" (ex.: "02/04") e coloque em amount o valor DA PARCELA daquele mês (NÃO o total); se não for parcelada use "parc":"". NÃO invente; se não houver lançamentos devolva {"itens":[]}.';
     const fmtItens=(arr)=>arr.filter(y=>y&&+y.amount>0).map(y=>{const pm=String(y.parc||y.parcela||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/)||String(y.desc||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/);return {date:(y.date&&/^\d{4}-\d{2}-\d{2}$/.test(y.date))?y.date:(curMonth+'-15'),desc:String(y.desc||''),amount:Math.round(Math.abs(+y.amount||0)*100)/100,type:(y.type==='in'?'in':'out'),cat:y.cat?String(y.cat).slice(0,20):'',parcNum:pm?+pm[1]:0,parcTotal:(pm&&+pm[2]>1)?+pm[2]:1};});
     const combinedText=textChunks.join('\n---\n').slice(0,7000);
     let all=[];
@@ -870,7 +963,8 @@ async function analyze(){
   }catch(err){
     const code=(err&&err.code)||'';
     if(code==='cancelled'){status.innerHTML='<div class="status">Análise cancelada.</div>';return;}
-    const msg={not_granted:'Você precisa permitir o uso da IA para analisar.',rate_limited:'Muitas análises seguidas — espere um minuto e tente com menos arquivos.',invalid_json:'A IA não estruturou os dados. Tente com menos imagens por vez.',image_rejected:'Uma das imagens é inválida ou grande demais. Remova-a e tente de novo.',prompt_too_large:'Conteúdo grande demais — envie menos arquivos por vez.',refused:'A IA não pôde processar este conteúdo.'}[code]||'Não deu para analisar agora. Tente com menos arquivos por vez.';
+    const detail=(err&&err.message)?(' — '+esc(String(err.message).slice(0,400))):'';
+    const msg={not_granted:'Você precisa permitir o uso da IA para analisar.',rate_limited:'Muitas análises seguidas — espere um minuto e tente com menos arquivos.',invalid_json:'A IA não estruturou os dados. Tente com menos imagens por vez.',image_rejected:'Uma das imagens é inválida ou grande demais. Remova-a e tente de novo.',prompt_too_large:'Conteúdo grande demais — envie menos arquivos por vez.',refused:'A IA não pôde processar este conteúdo.'}[code]||('Não deu para analisar agora'+detail);
     status.innerHTML='<div class="status">⚠️ '+msg+'</div>';
   }
 }
@@ -909,6 +1003,23 @@ function renderSugestoes(){
   if(inc<=0&&out<=0){
     const c=el('div','sug');c.innerHTML='<div class="head"><span class="ic">💡</span><b>Sem dados neste mês</b></div><p style="color:var(--muted);font-size:13.5px;margin:0">Adicione seus ganhos e gastos (ou importe a fatura) e eu monto sua análise de economia aqui.</p>';v.appendChild(c);return;
   }
+  // meta de gastos do mês (+ alerta)
+  const cm=el('div','sug');
+  const metaVal=+state.metaMes||0;
+  const pctM=metaVal>0?Math.min(100,out/metaVal*100):0;
+  cm.innerHTML=`<div class="head"><span class="ic">🎯</span><b>Meta de gastos do mês</b></div>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 10px">Defina quanto quer gastar no máximo por mês. O app te avisa na tela principal quando chegar perto ou passar.</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:${metaVal>0?'12px':'0'}"><span class="mono" style="color:var(--muted)">R$</span><input id="meta-inp" type="text" inputmode="decimal" value="${metaVal>0?String(metaVal).replace('.',','):''}" placeholder="ex: 3000" style="flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--ink);font-family:'JetBrains Mono',monospace;font-weight:600"><button class="btn save" id="meta-save" style="flex:0 0 auto;padding:10px 16px">Salvar</button></div>`;
+  if(metaVal>0){
+    const over=out-metaVal;
+    const cor=out>metaVal?'var(--out)':(pctM>=80?'var(--parc)':'var(--in)');
+    const status=out>metaVal?('🚨 Passou da meta em <b>'+fmt(over)+'</b> este mês.'):(pctM>=80?('⚠️ Atenção: já usou <b>'+pctM.toFixed(0)+'%</b> da meta.'):('✅ Dentro da meta — ainda pode gastar <b>'+fmt(metaVal-out)+'</b>.'));
+    cm.insertAdjacentHTML('beforeend',`<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span style="color:var(--muted)">Gasto: <b class="mono" style="color:var(--ink)">${fmt(out)}</b></span><span style="color:var(--muted)">Meta: <b class="mono" style="color:var(--ink)">${fmt(metaVal)}</b></span></div><div class="bar"><i style="width:${pctM}%;background:${cor}"></i></div><div style="font-size:13px;margin-top:8px;color:${cor}">${status}</div><button class="btn ghost" id="meta-clear" style="margin-top:12px;padding:8px 12px;font-size:12.5px">Remover meta</button>`);
+  }
+  v.appendChild(cm);
+  cm.querySelector('#meta-save').onclick=()=>{const mv=num(cm.querySelector('#meta-inp').value)||0;state.metaMes=mv>0?mv:0;persist();renderSugestoes();};
+  const clr=cm.querySelector('#meta-clear'); if(clr)clr.onclick=()=>{state.metaMes=0;persist();renderSugestoes();};
+
   const meta=inc>0?inc*0.2:0;
   const podeGuardar=Math.max(0,inc>0?Math.min(saldo,meta):saldo);
   // card guardar
@@ -973,13 +1084,13 @@ function renderSugestoes(){
   const c4=el('div','sug');c4.innerHTML='<div class="head"><span class="ic">✨</span><b>Plano personalizado com IA</b></div><p style="color:var(--muted);font-size:13px;margin:0 0 12px">A IA analisa este mês e monta um plano de economia sob medida pra você.</p>';
   const aiBtn=el('button','addbtn','✨ Gerar meu plano de economia');const aiOut=el('div');
   aiBtn.onclick=async()=>{
-    const sample=window.claude&&window.claude.use?await window.claude.use('sample').catch(()=>null):null;
+    const sample=makeSupaSample();
     if(!sample){aiOut.innerHTML='<div class="aiout">A IA não está disponível nesta tela.</div>';return;}
     aiBtn.disabled=true;aiOut.innerHTML='<div class="aiout">Pensando...</div>';
     const resumo=cats.map(([c,vv])=>c+' '+fmt(vv)).join(', ')||'sem categorias';
     const prompt='Ajude-me a economizar. Em '+monthLabel(curMonth)+' tive ganhos '+fmt(inc)+' e gastos '+fmt(out)+' (saldo '+fmt(saldo)+'). Gastos por categoria: '+resumo+'. Parcelas a pagar: '+fmt(falta)+'. Monte um plano PRÁTICO e curto (até 6 itens), em português, dizendo onde cortar, quanto dá pra poupar por mês e uma meta realista. Use os números. Só frases curtas começando com "- ", sem markdown.';
-    try{ await sample(prompt,{modelTier:'default',onText:({text})=>{aiOut.innerHTML='<div class="aiout">'+esc(text)+'</div>';}}); }
-    catch(e){ aiOut.innerHTML='<div class="aiout">Não consegui gerar agora'+(e&&e.code==='not_granted'?' — permita o uso da IA e tente de novo.':'. Tente novamente.')+'</div>'; }
+    try{ const txt=await sample.text(prompt); aiOut.innerHTML='<div class="aiout">'+esc(txt||'Sem resposta.')+'</div>'; }
+    catch(e){ aiOut.innerHTML='<div class="aiout">Não consegui gerar agora — '+esc(String(e&&e.message||e).slice(0,200))+'</div>'; }
     aiBtn.disabled=false;
   };
   c4.appendChild(aiBtn);c4.appendChild(aiOut);v.appendChild(c4);
@@ -1047,12 +1158,35 @@ function depositModal(id){
   md.querySelector('#dp-sub').onclick=()=>go(-1);
 }
 
+/* trava por PIN */
+function pinGate(){
+  try{ if(sessionStorage.getItem('rfn.pin.ok')==='1')return; }catch(e){ return; }
+  const PIN='0120';
+  const ov=el('div');ov.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px';
+  ov.innerHTML=`<div style="width:100%;max-width:320px;text-align:center">
+    <div class="logo" style="margin:0 auto 16px">RFN</div>
+    <h1 style="margin:0 0 6px">Ganhos &amp; Gastos</h1>
+    <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Digite o PIN para acessar</p>
+    <input id="pin-in" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="width:170px;text-align:center;letter-spacing:10px;font-size:26px;font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--ink);outline:0">
+    <div id="pin-err" style="color:var(--out);font-size:13px;height:18px;margin-top:8px"></div>
+    <button id="pin-go" class="addbtn" style="max-width:200px;margin:6px auto 0">Entrar</button>
+  </div>`;
+  document.body.appendChild(ov);
+  const inp=ov.querySelector('#pin-in'), err=ov.querySelector('#pin-err');
+  const tryUnlock=()=>{ if(inp.value===PIN){ try{sessionStorage.setItem('rfn.pin.ok','1');}catch(e){} ov.remove(); } else { err.textContent='PIN incorreto'; inp.value=''; inp.focus(); } };
+  ov.querySelector('#pin-go').onclick=tryUnlock;
+  inp.onkeydown=e=>{ if(e.key==='Enter')tryUnlock(); };
+  inp.oninput=()=>{ err.textContent=''; if(inp.value.length===4)tryUnlock(); };
+  setTimeout(()=>inp.focus(),100);
+}
+
 /* boot */
 state=loadLocal()||seed();
 normalize();
 applyTheme();
 if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];
 renderTabs();render();saveLocal();
+pinGate();
 
 (async()=>{try{
   db=makeSupaDb();if(!db)return;
