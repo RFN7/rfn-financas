@@ -457,7 +457,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v16 · sync + IA + meta + categorias + PIN 🔒</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v17 · sync + IA + meta + Face ID 🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -855,7 +855,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v16 (PDF direto + categorias)</span></div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v17 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
@@ -1158,26 +1158,53 @@ function depositModal(id){
   md.querySelector('#dp-sub').onclick=()=>go(-1);
 }
 
-/* trava por PIN */
+/* trava por Face ID / Touch ID (com PIN de reserva 0120) */
 function pinGate(){
   try{ if(sessionStorage.getItem('rfn.pin.ok')==='1')return; }catch(e){ return; }
   const PIN='0120';
+  const RPID=location.hostname||'localhost';
+  const CRED='rfn.bioCred';
+  const b2b=(buf)=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b2buf=(s)=>{s=s.replace(/-/g,'+').replace(/_/g,'/');const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer;};
+  const hasBio=!!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&location.protocol==='https:');
   const ov=el('div');ov.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px';
   ov.innerHTML=`<div style="width:100%;max-width:320px;text-align:center">
     <div class="logo" style="margin:0 auto 16px">RFN</div>
     <h1 style="margin:0 0 6px">Ganhos &amp; Gastos</h1>
-    <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Digite o PIN para acessar</p>
-    <input id="pin-in" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="width:170px;text-align:center;letter-spacing:10px;font-size:26px;font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--ink);outline:0">
-    <div id="pin-err" style="color:var(--out);font-size:13px;height:18px;margin-top:8px"></div>
-    <button id="pin-go" class="addbtn" style="max-width:200px;margin:6px auto 0">Entrar</button>
+    <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Acesso protegido</p>
+    <button id="bio-go" class="addbtn" style="max-width:250px;margin:0 auto 12px">🔓 Entrar com Face ID</button>
+    <div id="pin-wrap" style="display:none">
+      <input id="pin-in" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="width:170px;text-align:center;letter-spacing:10px;font-size:26px;font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--ink);outline:0">
+      <div><button id="pin-go" class="btn ghost" style="margin-top:12px;max-width:200px;padding:10px 16px">Entrar com PIN</button></div>
+    </div>
+    <div id="pin-err" style="color:var(--out);font-size:13px;height:18px;margin-top:10px"></div>
+    <button id="use-pin" style="background:none;border:0;color:var(--muted);font-size:12.5px;margin-top:6px;text-decoration:underline;cursor:pointer">Usar PIN</button>
   </div>`;
   document.body.appendChild(ov);
-  const inp=ov.querySelector('#pin-in'), err=ov.querySelector('#pin-err');
-  const tryUnlock=()=>{ if(inp.value===PIN){ try{sessionStorage.setItem('rfn.pin.ok','1');}catch(e){} ov.remove(); } else { err.textContent='PIN incorreto'; inp.value=''; inp.focus(); } };
-  ov.querySelector('#pin-go').onclick=tryUnlock;
-  inp.onkeydown=e=>{ if(e.key==='Enter')tryUnlock(); };
-  inp.oninput=()=>{ err.textContent=''; if(inp.value.length===4)tryUnlock(); };
-  setTimeout(()=>inp.focus(),100);
+  const $$=s=>ov.querySelector(s);
+  const err=$$('#pin-err');
+  const done=()=>{ try{sessionStorage.setItem('rfn.pin.ok','1');}catch(e){} ov.remove(); };
+  const showPin=()=>{ $$('#pin-wrap').style.display='block'; $$('#use-pin').style.display='none'; setTimeout(()=>$$('#pin-in').focus(),50); };
+  const tryPin=()=>{ const v=$$('#pin-in').value; if(v===PIN)done(); else{ err.textContent='PIN incorreto'; $$('#pin-in').value=''; $$('#pin-in').focus(); } };
+  $$('#pin-go').onclick=tryPin;
+  $$('#pin-in').oninput=()=>{ err.textContent=''; if($$('#pin-in').value.length===4)tryPin(); };
+  $$('#use-pin').onclick=showPin;
+  async function bio(){
+    if(!hasBio){ err.textContent='Face ID indisponível aqui — use o PIN.'; showPin(); return; }
+    err.textContent='';
+    try{
+      const id=localStorage.getItem(CRED);
+      if(id){
+        await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:b2buf(id)}],userVerification:'required',rpId:RPID,timeout:60000}});
+      } else {
+        const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'RFN Finanças',id:RPID},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'rfn',displayName:'RFN'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}});
+        localStorage.setItem(CRED,b2b(cred.rawId));
+      }
+      done();
+    }catch(e){ err.textContent='Não deu com o Face ID — use o PIN.'; showPin(); }
+  }
+  const bioBtn=$$('#bio-go');
+  if(hasBio){ bioBtn.onclick=bio; } else { bioBtn.style.display='none'; showPin(); }
 }
 
 /* boot */
