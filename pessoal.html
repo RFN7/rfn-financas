@@ -272,8 +272,8 @@ let state=null, db=null, curMonth=todayISO.slice(0,7), addType='out';
 /* ===== Sincronização na nuvem (Supabase) — Mac ↔ celular ===== */
 const SB_URL='https://lckyrmhlrvuprkbqapez.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxja3lybWhscnZ1cHJrYnFhcGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0MTg3NDEsImV4cCI6MjA5OTk5NDc0MX0.Mou5NqTynvHPj5g1C2DT_lx8PyZ-353JBSL0K80bJK4';
-const SB_APPKEY='rfn7-cofre-a7Fk29Lm4Qx8'; // chave da funcao de IA (a mesma pra todas as versoes)
-const SB_ROW='rfn7-pessoal-Zx91Kd4mQ8v7'; // "cofre" SEPARADO — dados so deste caderninho pessoal
+const SB_APPKEY='rfn7-cofre-a7Fk29Lm4Qx8'; // chave da funcao de IA
+const SB_ROW='rfn7-pessoal-Zx91Kd4mQ8v7'; // cofre SEPARADO do pessoal
 function makeSupaDb(){
   const base=SB_URL+'/rest/v1/ledger';
   const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
@@ -415,8 +415,11 @@ function askConfirm(msg,onYes){
   md.querySelector('#ac-yes').onclick=()=>{root.innerHTML='';onYes();};
 }
 let tab='main', listMode='day', editId=null;
-const CATEMOJI={mercado:'🛒',alimentacao:'🍔','alimentação':'🍔',restaurante:'🍔',transporte:'🚗',combustivel:'⛽','combustível':'⛽',uber:'🚗',farmacia:'💊','farmácia':'💊',saude:'🏋️','saúde':'🏋️',academia:'🏋️',vestuario:'👕','vestuário':'👕',roupa:'👕',lazer:'🎬',assinatura:'📱',assinaturas:'📱',streaming:'📱',casa:'🏠',moradia:'🏠',aluguel:'🏠',educacao:'📚','educação':'📚',pets:'🐶',pet:'🐶',presentes:'🎁',presente:'🎁',compras:'🛍️',mercadolivre:'🛍️',amazon:'🛍️',salario:'💼','salário':'💼',renda:'💼',freela:'💻',investimento:'📈',outros:'📦'};
+const CATEMOJI={'contas de casa':'🏠','conta de casa':'🏠',condominio:'🏠','condomínio':'🏠',agua:'🏠','água':'🏠',luz:'🏠',energia:'🏠',gas:'🏠','gás':'🏠',telefone:'🏠',internet:'🏠',iptu:'🏠',mercado:'🛒',alimentacao:'🍔','alimentação':'🍔',restaurante:'🍔',transporte:'🚗',combustivel:'⛽','combustível':'⛽',uber:'🚗',farmacia:'💊','farmácia':'💊',saude:'🏋️','saúde':'🏋️',academia:'🏋️',vestuario:'👕','vestuário':'👕',roupa:'👕',lazer:'🎬',assinatura:'📱',assinaturas:'📱',streaming:'📱',casa:'🏠',moradia:'🏠',aluguel:'🏠',educacao:'📚','educação':'📚',pets:'🐶',pet:'🐶',presentes:'🎁',presente:'🎁',compras:'🛍️',mercadolivre:'🛍️',amazon:'🛍️',salario:'💼','salário':'💼',renda:'💼',freela:'💻',investimento:'📈',outros:'📦'};
 function catEmoji(c){return CATEMOJI[(c||'').toLowerCase().trim()]||'📦';}
+const CATS_OUT=['Contas de casa','Mercado','Alimentação','Restaurante','Transporte','Combustível','Saúde','Farmácia','Assinaturas','Lazer','Educação','Compras','Pets','Vestuário','Presentes','Outros'];
+const CATS_IN=['Salário','Renda','Freela','Investimento','Presente','Outros'];
+function catOptions(type){return (type==='in'?CATS_IN:CATS_OUT).map(c=>'<option value="'+c+'">').join('');}
 function renderTabs(){
   const tb=$('#tabbar');tb.innerHTML='';
   [['main','📒 Lançamentos'],['import','📎 Importar'],['sugestoes','💡 Sugestões'],['caixinhas','🐷 Caixinhas']].forEach(([k,label])=>{
@@ -455,7 +458,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v14 · dados separados 🔒</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v17 · Face ID 🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -508,7 +511,9 @@ function render(){try{
   frm.innerHTML=`<input class="desc" id="a-desc" placeholder="Anotação (ex: ${addType==='in'?'Salário, freela':'Mercado, Tênis'})">
     <input class="amt" id="a-amt" type="text" inputmode="decimal" placeholder="valor">
     ${addType==='out'?`<input class="parc" id="a-parc" type="number" min="1" value="1" title="Parcelas" placeholder="1x">`:''}
-    <input class="dt" id="a-date" type="date" value="${curMonth===realMonth?todayISO:curMonth+'-10'}">`;
+    <input class="dt" id="a-date" type="date" value="${curMonth===realMonth?todayISO:curMonth+'-10'}">
+    <input id="a-cat" list="rfncats" placeholder="Categoria (ex: ${addType==='in'?'Salário':'Contas de casa, Mercado'})" style="flex:1 1 100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:var(--ink);outline:0">
+    <datalist id="rfncats">${catOptions(addType)}</datalist>`;
   ab.appendChild(frm);
   const chk=el('label','chk');chk.innerHTML='<input type="checkbox" id="a-recur"> 🔁 Fixo — repete todo mês';
   ab.appendChild(chk);
@@ -651,7 +656,9 @@ function addEntry(){
   const recur=$('#a-recur').checked;
   const pc=(!recur&&addType==='out')?Math.max(1,parseInt($('#a-parc').value)||1):1;
   if(!amt||amt<=0){$('#a-amt').focus();return;}
+  const catEl=$('#a-cat'); const cat=catEl?catEl.value.trim():'';
   const obj={id:uid(),type:addType,desc,amount:amt,date,parc:pc};
+  if(cat)obj.cat=cat;
   if(recur)obj.recur=true;
   state.entries.push(obj);
   curMonth=monthKey(date);
@@ -671,7 +678,7 @@ function buildEditPanel(e){
   wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><b style="font-size:16px">✏️ Editar</b></div>
     <div class="seg" style="margin-bottom:11px"><button id="ep-in" class="${e.type==='in'?'on in':''}">＋ Ganho</button><button id="ep-out" class="${e.type!=='in'?'on out':''}">− Gasto</button></div>
     <div class="field"><label>Anotação</label><input id="ep-desc" value="${esc(e.desc)}" placeholder="Descrição"></div>
-    <div class="field"><label>Categoria (opcional)</label><input id="ep-cat" value="${esc(e.cat||'')}" placeholder="Ex: Mercado, Transporte"></div>
+    <div class="field"><label>Categoria (opcional)</label><input id="ep-cat" list="rfncats2" value="${esc(e.cat||'')}" placeholder="Ex: Contas de casa, Mercado"><datalist id="rfncats2">${catOptions(e.type)}</datalist></div>
     <div class="frow2"><div class="field"><label>Valor (R$)</label><input id="ep-amt" type="text" inputmode="decimal" value="${String(e.amount).replace('.',',')}"></div>
     <div class="field" id="ep-parcwrap"><label>Parcelas</label><input id="ep-parc" type="number" min="1" value="${parcCount(e)}"></div></div>
     <div class="field"><label id="ep-datelbl">Data</label><input id="ep-date" type="date" value="${e.date}"></div>
@@ -849,7 +856,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v13 (PDF direto + plano de economia)</span></div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v17 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
@@ -896,7 +903,7 @@ async function analyze(){
     if(imgUnsupported&&!imgBlobs.length&&!realText){ status.innerHTML='<div class="status">⚠️ Este app não conseguiu enviar as imagens para a IA. Tente: (1) tirar um <b>print</b> da fatura em vez da foto, (2) colar o <b>texto</b> da fatura no campo acima, ou (3) importar pelo <b>computador</b> (claude.ai).</div>';return; }
     if(!imgBlobs.length&&skipped.length&&!realText){ status.innerHTML='<div class="status">⚠️ As imagens estão num formato que a IA não lê (ex.: <b>HEIC</b> do iPhone). Nas Configurações do iPhone → Câmera → Formatos, escolha "Mais Compatível", ou tire um <b>print</b> da fatura (que vira PNG) e anexe de novo.</div>';return; }
     const anoRef=curMonth.slice(0,4);
-    const baseRules='"out"=gasto/compra/pagamento, "in"=recebimento/crédito/salário/estorno. amount sempre POSITIVO com ponto decimal (ignore R$; 1.234,56 vira 1234.56). Se a data tiver só dia/mês use o ano '+anoRef+'. cat=categoria curta (Mercado, Alimentação, Transporte, Combustível, Farmácia, Saúde, Vestuário, Lazer, Assinatura, Casa, Educação, Pets, Compras, Outros). Se a compra for PARCELADA, preencha "parc" com "atual/total" (ex.: "02/04") e coloque em amount o valor DA PARCELA daquele mês (NÃO o total); se não for parcelada use "parc":"". NÃO invente; se não houver lançamentos devolva {"itens":[]}.';
+    const baseRules='"out"=gasto/compra/pagamento, "in"=recebimento/crédito/salário/estorno. amount sempre POSITIVO com ponto decimal (ignore R$; 1.234,56 vira 1234.56). Se a data tiver só dia/mês use o ano '+anoRef+'. cat=categoria curta (Contas de casa, Mercado, Alimentação, Transporte, Combustível, Farmácia, Saúde, Vestuário, Lazer, Assinaturas, Educação, Pets, Compras, Outros). IMPORTANTE: condomínio, água, luz/energia, gás, telefone, internet, aluguel e IPTU use SEMPRE cat "Contas de casa". Se a compra for PARCELADA, preencha "parc" com "atual/total" (ex.: "02/04") e coloque em amount o valor DA PARCELA daquele mês (NÃO o total); se não for parcelada use "parc":"". NÃO invente; se não houver lançamentos devolva {"itens":[]}.';
     const fmtItens=(arr)=>arr.filter(y=>y&&+y.amount>0).map(y=>{const pm=String(y.parc||y.parcela||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/)||String(y.desc||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/);return {date:(y.date&&/^\d{4}-\d{2}-\d{2}$/.test(y.date))?y.date:(curMonth+'-15'),desc:String(y.desc||''),amount:Math.round(Math.abs(+y.amount||0)*100)/100,type:(y.type==='in'?'in':'out'),cat:y.cat?String(y.cat).slice(0,20):'',parcNum:pm?+pm[1]:0,parcTotal:(pm&&+pm[2]>1)?+pm[2]:1};});
     const combinedText=textChunks.join('\n---\n').slice(0,7000);
     let all=[];
@@ -1152,12 +1159,62 @@ function depositModal(id){
   md.querySelector('#dp-sub').onclick=()=>go(-1);
 }
 
+/* trava por Face ID / Touch ID (com PIN de reserva 0120) */
+function pinGate(){
+  try{ if(sessionStorage.getItem('rfn.pin.ok')==='1')return; }catch(e){ return; }
+  const PIN='0120';
+  const RPID=location.hostname||'localhost';
+  const CRED='rfn.bioCred';
+  const b2b=(buf)=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b2buf=(s)=>{s=s.replace(/-/g,'+').replace(/_/g,'/');const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer;};
+  const hasBio=!!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&location.protocol==='https:');
+  const ov=el('div');ov.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px';
+  ov.innerHTML=`<div style="width:100%;max-width:320px;text-align:center">
+    <div class="logo" style="margin:0 auto 16px">RFN</div>
+    <h1 style="margin:0 0 6px">Ganhos &amp; Gastos</h1>
+    <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Acesso protegido</p>
+    <button id="bio-go" class="addbtn" style="max-width:250px;margin:0 auto 12px">🔓 Entrar com Face ID</button>
+    <div id="pin-wrap" style="display:none">
+      <input id="pin-in" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="width:170px;text-align:center;letter-spacing:10px;font-size:26px;font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--ink);outline:0">
+      <div><button id="pin-go" class="btn ghost" style="margin-top:12px;max-width:200px;padding:10px 16px">Entrar com PIN</button></div>
+    </div>
+    <div id="pin-err" style="color:var(--out);font-size:13px;height:18px;margin-top:10px"></div>
+    <button id="use-pin" style="background:none;border:0;color:var(--muted);font-size:12.5px;margin-top:6px;text-decoration:underline;cursor:pointer">Usar PIN</button>
+  </div>`;
+  document.body.appendChild(ov);
+  const $$=s=>ov.querySelector(s);
+  const err=$$('#pin-err');
+  const done=()=>{ try{sessionStorage.setItem('rfn.pin.ok','1');}catch(e){} ov.remove(); };
+  const showPin=()=>{ $$('#pin-wrap').style.display='block'; $$('#use-pin').style.display='none'; setTimeout(()=>$$('#pin-in').focus(),50); };
+  const tryPin=()=>{ const v=$$('#pin-in').value; if(v===PIN)done(); else{ err.textContent='PIN incorreto'; $$('#pin-in').value=''; $$('#pin-in').focus(); } };
+  $$('#pin-go').onclick=tryPin;
+  $$('#pin-in').oninput=()=>{ err.textContent=''; if($$('#pin-in').value.length===4)tryPin(); };
+  $$('#use-pin').onclick=showPin;
+  async function bio(){
+    if(!hasBio){ err.textContent='Face ID indisponível aqui — use o PIN.'; showPin(); return; }
+    err.textContent='';
+    try{
+      const id=localStorage.getItem(CRED);
+      if(id){
+        await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:b2buf(id)}],userVerification:'required',rpId:RPID,timeout:60000}});
+      } else {
+        const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'RFN Finanças',id:RPID},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'rfn',displayName:'RFN'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}});
+        localStorage.setItem(CRED,b2b(cred.rawId));
+      }
+      done();
+    }catch(e){ err.textContent='Não deu com o Face ID — use o PIN.'; showPin(); }
+  }
+  const bioBtn=$$('#bio-go');
+  if(hasBio){ bioBtn.onclick=bio; } else { bioBtn.style.display='none'; showPin(); }
+}
+
 /* boot */
 state=loadLocal()||seed();
 normalize();
 applyTheme();
 if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];
 renderTabs();render();saveLocal();
+pinGate();
 
 (async()=>{try{
   db=makeSupaDb();if(!db)return;
