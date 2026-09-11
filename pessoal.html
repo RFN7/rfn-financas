@@ -458,7 +458,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v18 · Face ID 🔒</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v19 · Face ID 🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -856,7 +856,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v18 (PDF direto + categorias)</span></div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v19 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
@@ -1162,7 +1162,7 @@ function depositModal(id){
 /* trava por Face ID / Touch ID (com PIN de reserva 0120) */
 function pinGate(){
   try{ if(sessionStorage.getItem('rfn.pin.ok')==='1')return; }catch(e){ return; }
-  const PIN='0120';
+  const PIN='010920';
   const RPID=location.hostname||'localhost';
   const CRED='rfn.bioCred';
   const b2b=(buf)=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -1175,7 +1175,7 @@ function pinGate(){
     <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Acesso protegido</p>
     <button id="bio-go" class="addbtn" style="max-width:250px;margin:0 auto 12px">🔓 Entrar com Face ID</button>
     <div id="pin-wrap" style="display:none">
-      <input id="pin-in" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="width:170px;text-align:center;letter-spacing:10px;font-size:26px;font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--ink);outline:0">
+      <input id="pin-in" type="password" inputmode="numeric" maxlength="6" placeholder="••••" style="width:170px;text-align:center;letter-spacing:10px;font-size:26px;font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--ink);outline:0">
       <div><button id="pin-go" class="btn ghost" style="margin-top:12px;max-width:200px;padding:10px 16px">Entrar com PIN</button></div>
     </div>
     <div id="pin-err" style="color:var(--out);font-size:13px;height:18px;margin-top:10px"></div>
@@ -1188,7 +1188,7 @@ function pinGate(){
   const showPin=()=>{ $$('#pin-wrap').style.display='block'; $$('#use-pin').style.display='none'; setTimeout(()=>$$('#pin-in').focus(),50); };
   const tryPin=()=>{ const v=$$('#pin-in').value; if(v===PIN)done(); else{ err.textContent='PIN incorreto'; $$('#pin-in').value=''; $$('#pin-in').focus(); } };
   $$('#pin-go').onclick=tryPin;
-  $$('#pin-in').oninput=()=>{ err.textContent=''; if($$('#pin-in').value.length===4)tryPin(); };
+  $$('#pin-in').oninput=()=>{ err.textContent=''; if($$('#pin-in').value.length===6)tryPin(); };
   $$('#use-pin').onclick=showPin;
   async function bio(){
     if(!hasBio){ err.textContent='Face ID indisponível aqui — use o PIN.'; showPin(); return; }

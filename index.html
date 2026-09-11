@@ -457,7 +457,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v18 · sync + IA + meta + Face ID 🔒</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · v19 · sync + IA + meta + Face ID 🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -855,7 +855,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v18 (PDF direto + categorias)</span></div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v19 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
