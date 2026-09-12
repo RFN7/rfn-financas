@@ -403,7 +403,7 @@ function hasExample(){return state.entries.some(e=>e.ex);}
 function renderMonthSel(){
   const s=$('#msel');s.innerHTML='';
   months().reverse().forEach(k=>{const o=el('option',null,monthLabel(k));o.value=k;if(k===curMonth)o.selected=true;s.appendChild(o);});
-  s.onchange=()=>{curMonth=s.value;render();};
+  s.onchange=()=>{curMonth=s.value;renderActive();};
 }
 function askConfirm(msg,onYes){
   const root=$('#modalRoot');
@@ -447,6 +447,7 @@ function renderActive(){
 }
 function renderResumo(){
   const v=$('#resumoView'); if(!v)return; v.innerHTML='';
+  renderMonthSel();
   const items=expandMonth(curMonth);
   const inc=items.filter(i=>i.e.type==='in').reduce((a,i)=>a+i.value,0);
   const out=items.filter(i=>i.e.type==='out').reduce((a,i)=>a+i.value,0);
@@ -467,8 +468,7 @@ function renderResumo(){
     const tot=cats.reduce((s,c)=>s+c[1],0)||1;
     let off=25,segs='';
     cats.forEach((c,idx)=>{const pct=c[1]/tot*100;const col=PIE[idx%PIE.length];segs+='<circle cx="21" cy="21" r="15.9155" fill="none" stroke="'+col+'" stroke-width="6" stroke-dasharray="'+pct.toFixed(2)+' '+(100-pct).toFixed(2)+'" stroke-dashoffset="'+off.toFixed(2)+'"/>';off=(off-pct+100)%100;});
-    let leg='';cats.slice(0,6).forEach((c,idx)=>{leg+='<div style="display:flex;align-items:center;gap:7px;font-size:12px;margin:3px 0"><span style="width:9px;height:9px;border-radius:3px;background:'+PIE[idx%PIE.length]+';flex:0 0 auto"></span><span style="flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+catEmoji(c[0])+' '+esc(c[0])+'</span><span class="mono" style="font-weight:600;font-size:11.5px">'+fmt(c[1])+'</span></div>';});
-    if(cats.length>6)leg+='<div style="font-size:11.5px;color:var(--faint);margin-top:3px">+ '+(cats.length-6)+' outra(s) categoria(s)</div>';
+    let leg='';cats.forEach((c,idx)=>{const p=(c[1]/tot*100);leg+='<div style="display:flex;align-items:center;gap:7px;font-size:12px;margin:3px 0"><span style="width:9px;height:9px;border-radius:3px;background:'+PIE[idx%PIE.length]+';flex:0 0 auto"></span><span style="flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+catEmoji(c[0])+' '+esc(c[0])+'</span><span class="mono" style="font-weight:600;font-size:11.5px">'+fmt(c[1])+' <span style="color:var(--faint)">'+p.toFixed(0)+'%</span></span></div>';});
     const outk=out>=1000?(out/1000).toFixed(1).replace('.',',')+'k':Math.round(out);
     const card=el('div','sug');
     card.innerHTML='<div class="head"><span class="ic">🥧</span><b>Gastos por categoria</b></div><div style="display:flex;align-items:center;gap:14px;margin-top:6px"><svg width="118" height="118" viewBox="0 0 42 42" style="flex:0 0 auto"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--surface-2)" stroke-width="6"/>'+segs+'<text x="21" y="20" text-anchor="middle" font-size="3.4" fill="#8b93a1">Gastos</text><text x="21" y="25.5" text-anchor="middle" font-size="4.2" font-weight="700" fill="var(--ink)">'+outk+'</text></svg><div style="flex:1;min-width:0">'+leg+'</div></div>';
@@ -517,7 +517,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v20 · Resumo 📊🔒</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v21 · Resumo 📊🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -915,7 +915,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v20 (PDF direto + categorias)</span></div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v21 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
