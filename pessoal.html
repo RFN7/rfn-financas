@@ -231,7 +231,8 @@ input,select{font-family:inherit;font-size:15px}
   </div>
 
   <div class="tabbar" id="tabbar"></div>
-  <div id="mainView">
+  <div id="resumoView" style="display:none"></div>
+  <div id="mainView" style="display:none">
     <div id="nudge"></div>
     <div class="summary" id="summary"></div>
     <div id="parcinfo"></div>
@@ -414,7 +415,7 @@ function askConfirm(msg,onYes){
   md.querySelector('#ac-no').onclick=()=>{root.innerHTML='';};
   md.querySelector('#ac-yes').onclick=()=>{root.innerHTML='';onYes();};
 }
-let tab='main', listMode='day', editId=null;
+let tab='resumo', listMode='day', editId=null;
 const CATEMOJI={'contas de casa':'🏠','conta de casa':'🏠',condominio:'🏠','condomínio':'🏠',agua:'🏠','água':'🏠',luz:'🏠',energia:'🏠',gas:'🏠','gás':'🏠',telefone:'🏠',internet:'🏠',iptu:'🏠',mercado:'🛒',alimentacao:'🍔','alimentação':'🍔',restaurante:'🍔',transporte:'🚗',combustivel:'⛽','combustível':'⛽',uber:'🚗',farmacia:'💊','farmácia':'💊',saude:'🏋️','saúde':'🏋️',academia:'🏋️',vestuario:'👕','vestuário':'👕',roupa:'👕',lazer:'🎬',assinatura:'📱',assinaturas:'📱',streaming:'📱',casa:'🏠',moradia:'🏠',aluguel:'🏠',educacao:'📚','educação':'📚',pets:'🐶',pet:'🐶',presentes:'🎁',presente:'🎁',compras:'🛍️',mercadolivre:'🛍️',amazon:'🛍️',salario:'💼','salário':'💼',renda:'💼',freela:'💻',investimento:'📈',outros:'📦'};
 function catEmoji(c){return CATEMOJI[(c||'').toLowerCase().trim()]||'📦';}
 const CATS_OUT=['Contas de casa','Mercado','Alimentação','Restaurante','Transporte','Combustível','Saúde','Farmácia','Assinaturas','Lazer','Educação','Compras','Pets','Vestuário','Presentes','Outros'];
@@ -422,22 +423,80 @@ const CATS_IN=['Salário','Renda','Freela','Investimento','Presente','Outros'];
 function catOptions(type){return (type==='in'?CATS_IN:CATS_OUT).map(c=>'<option value="'+c+'">').join('');}
 function renderTabs(){
   const tb=$('#tabbar');tb.innerHTML='';
-  [['main','📒 Lançamentos'],['import','📎 Importar'],['sugestoes','💡 Sugestões'],['caixinhas','🐷 Caixinhas']].forEach(([k,label])=>{
+  [['resumo','📊 Resumo'],['main','📒 Lançamentos'],['import','📎 Importar'],['sugestoes','💡 Sugestões'],['caixinhas','🐷 Caixinhas']].forEach(([k,label])=>{
     const b=el('button',(tab===k?'on':''),label);b.onclick=()=>goTab(k);tb.appendChild(b);
   });
 }
 function goTab(t){
   tab=t;
+  $('#resumoView').style.display=t==='resumo'?'':'none';
   $('#mainView').style.display=t==='main'?'':'none';
   $('#importView').style.display=t==='import'?'':'none';
   $('#sugestoesView').style.display=t==='sugestoes'?'':'none';
   $('#caixinhasView').style.display=t==='caixinhas'?'':'none';
   renderTabs();
-  if(t==='import')renderImport();
-  else if(t==='sugestoes')renderSugestoes();
-  else if(t==='caixinhas')renderCaixinhas();
-  else render();
+  renderActive();
   window.scrollTo(0,0);
+}
+function renderActive(){
+  if(tab==='resumo')renderResumo();
+  else if(tab==='import')renderImport();
+  else if(tab==='sugestoes')renderSugestoes();
+  else if(tab==='caixinhas')renderCaixinhas();
+  else render();
+}
+function renderResumo(){
+  const v=$('#resumoView'); if(!v)return; v.innerHTML='';
+  const items=expandMonth(curMonth);
+  const inc=items.filter(i=>i.e.type==='in').reduce((a,i)=>a+i.value,0);
+  const out=items.filter(i=>i.e.type==='out').reduce((a,i)=>a+i.value,0);
+  const saldo=inc-out;
+  v.appendChild(el('div',null,`<div style="color:var(--muted);font-size:13px;margin-bottom:12px">📊 Visão geral de <b>${monthLabel(curMonth)}</b> — atualiza sozinho conforme você lança ou importa.</div>`));
+  const sm=el('div','summary');
+  sm.append(
+    el('div','scard balance '+(saldo>=0?'pos':'neg'),'<div><div class="l" style="margin-bottom:2px">💰 Saldo do mês</div><small style="color:var(--muted);font-size:12px">ganhos − gastos</small></div><div class="v">'+(saldo>=0?'+':'−')+fmts(Math.abs(saldo))+'</div>'),
+    el('div','scard in','<div class="l">📈 Ganhos</div><div class="v">'+fmt(inc)+'</div>'),
+    el('div','scard out','<div class="l">📉 Gastos</div><div class="v">'+fmt(out)+'</div>')
+  );
+  v.appendChild(sm);
+  // pizza por categoria
+  const byCat={}; items.filter(i=>i.e.type==='out').forEach(i=>{const c=(i.e.cat&&i.e.cat.trim())||'Outros';byCat[c]=(byCat[c]||0)+i.value;});
+  const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  if(cats.length){
+    const PIE=['#FF3B3B','#8b93a1','#FFB020','#25E39B','#4C9BFF','#FF6FAE','#B36BFF','#2ED0C0','#F0C808','#FF8A3D'];
+    const tot=cats.reduce((s,c)=>s+c[1],0)||1;
+    let off=25,segs='';
+    cats.forEach((c,idx)=>{const pct=c[1]/tot*100;const col=PIE[idx%PIE.length];segs+='<circle cx="21" cy="21" r="15.9155" fill="none" stroke="'+col+'" stroke-width="6" stroke-dasharray="'+pct.toFixed(2)+' '+(100-pct).toFixed(2)+'" stroke-dashoffset="'+off.toFixed(2)+'"/>';off=(off-pct+100)%100;});
+    let leg='';cats.slice(0,6).forEach((c,idx)=>{leg+='<div style="display:flex;align-items:center;gap:7px;font-size:12px;margin:3px 0"><span style="width:9px;height:9px;border-radius:3px;background:'+PIE[idx%PIE.length]+';flex:0 0 auto"></span><span style="flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+catEmoji(c[0])+' '+esc(c[0])+'</span><span class="mono" style="font-weight:600;font-size:11.5px">'+fmt(c[1])+'</span></div>';});
+    if(cats.length>6)leg+='<div style="font-size:11.5px;color:var(--faint);margin-top:3px">+ '+(cats.length-6)+' outra(s) categoria(s)</div>';
+    const outk=out>=1000?(out/1000).toFixed(1).replace('.',',')+'k':Math.round(out);
+    const card=el('div','sug');
+    card.innerHTML='<div class="head"><span class="ic">🥧</span><b>Gastos por categoria</b></div><div style="display:flex;align-items:center;gap:14px;margin-top:6px"><svg width="118" height="118" viewBox="0 0 42 42" style="flex:0 0 auto"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--surface-2)" stroke-width="6"/>'+segs+'<text x="21" y="20" text-anchor="middle" font-size="3.4" fill="#8b93a1">Gastos</text><text x="21" y="25.5" text-anchor="middle" font-size="4.2" font-weight="700" fill="var(--ink)">'+outk+'</text></svg><div style="flex:1;min-width:0">'+leg+'</div></div>';
+    v.appendChild(card);
+  }
+  // fixos do mês
+  const fx=fixosMensais();
+  if(fx.has){ const st=el('div','parcstrip');st.style.cssText='display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:8px;font-size:13px';
+    st.innerHTML='<span>🔁</span><span>Fixos todo mês</span><span style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;font-weight:700">'+(fx.inc>0?'<span style="color:var(--in)">+'+fmts(fx.inc)+'</span>':'')+(fx.inc>0&&fx.out>0?' · ':'')+(fx.out>0?'<span style="color:var(--out)">−'+fmts(fx.out)+'</span>':'')+'</span>';
+    v.appendChild(st);
+  }
+  // parcelas em aberto
+  const falta=faltaParcelas();
+  if(falta>0)v.appendChild(el('div','parcstrip','<span>💳</span><span>Parcelas em aberto — falta pagar</span><span class="v">'+fmts(falta)+'</span>'));
+  // meta
+  if(state.metaMes>0){ const mm=state.metaMes,pct=Math.min(100,out/mm*100),cor=out>mm?'var(--out)':(pct>=80?'var(--parc)':'var(--in)');
+    const status=out>mm?('🚨 Passou da meta em <b>'+fmt(out-mm)+'</b>'):(pct>=80?('⚠️ Já usou '+pct.toFixed(0)+'% da meta'):('✅ Dentro da meta — pode gastar <b>'+fmt(mm-out)+'</b>'));
+    const mc=el('div','sug');mc.innerHTML='<div class="head"><span class="ic">🎯</span><b>Meta de gastos</b></div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin:2px 0 4px"><span style="color:var(--muted)">Gasto: <b class="mono" style="color:var(--ink)">'+fmt(out)+'</b></span><span style="color:var(--muted)">Meta: <b class="mono" style="color:var(--ink)">'+fmt(mm)+'</b></span></div><div class="bar"><i style="width:'+pct+'%;background:'+cor+'"></i></div><div style="font-size:13px;margin-top:8px;color:'+cor+'">'+status+'</div>';
+    v.appendChild(mc);
+  }
+  // caixinhas
+  const guard=(state.boxes||[]).reduce((s,b)=>s+(+b.saved||0),0);
+  if((state.boxes||[]).length)v.appendChild(el('div','parcstrip','<span>🐷</span><span>Guardado nas caixinhas</span><span class="v" style="color:var(--in)">'+fmts(guard)+'</span>'));
+  // status
+  const st2=el('div');st2.style.cssText='display:flex;justify-content:center;gap:16px;color:var(--faint);font-size:11px;margin-top:16px;border-top:1px solid var(--border);padding-top:12px;flex-wrap:wrap';
+  st2.innerHTML='<span>'+(db?'✓ <b style="color:var(--in)">Sincronizado</b>':'✓ Salvo no aparelho')+'</span><span>🤖 <b style="color:var(--in)">IA online</b></span><span>📅 '+monthLabel(curMonth).split(' ')[0]+'</span>';
+  v.appendChild(st2);
+  if(!items.length)v.appendChild(el('div','empty','Sem lançamentos em '+monthLabel(curMonth).split(' ')[0]+' ainda.<br>Adicione ou importe pra ver o resumo. 📊'));
 }
 function fvMonthly(P,annual,years){const i=annual/12,n=years*12;if(i===0)return P*n;return P*((Math.pow(1+i,n)-1)/i);}
 function depositedThisMonth(){return state.lastDepositDate&&monthKey(state.lastDepositDate)===realMonth;}
@@ -458,7 +517,7 @@ function renderFooter(){
     b.onclick=()=>askConfirm('Apagar TODAS as anotações? Isso não tem como desfazer.',()=>{state.entries=[];persist();render();});
     f.appendChild(b);
   }
-  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v19 · Face ID 🔒</div>'));
+  f.appendChild(el('div',null,'<div style="text-align:center;color:var(--faint);font-size:10.5px;padding:10px 0 0">RFN Finanças · PESSOAL · v20 · Resumo 📊🔒</div>'));
 }
 function render(){try{
   renderMonthSel();
@@ -856,7 +915,7 @@ function renderImport(){
   drop.addEventListener('drop',e=>{if(e.dataTransfer.files&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
   showChips();
   const ana=el('button','addbtn','✨ Analisar com IA');ana.style.marginTop='14px';ana.onclick=analyze;card.appendChild(ana);
-  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v19 (PDF direto + categorias)</span></div>'));
+  card.appendChild(el('div',null,'<div style="color:var(--faint);font-size:11.5px;margin-top:10px">📱 Dica: no iPhone, prefira <b>prints</b> da fatura (ou fotos em JPEG) — o formato HEIC não é lido pela IA. <span style="color:var(--in)">· IA v20 (PDF direto + categorias)</span></div>'));
   v.appendChild(card);
   v.appendChild(el('div',null,'')).id='imp-status';
   v.appendChild(el('div',null,'')).id='imp-review';
@@ -1213,14 +1272,14 @@ state=loadLocal()||seed();
 normalize();
 applyTheme();
 if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];
-renderTabs();render();saveLocal();
+goTab(tab);saveLocal();
 pinGate();
 
 (async()=>{try{
   db=makeSupaDb();if(!db)return;
   const ref=db.doc('ledger/data');
   const snap=await ref.get();
-  const adopt=(data)=>{state=data;normalize();applyTheme();if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];renderTabs();render();saveLocal();};
+  const adopt=(data)=>{state=data;normalize();applyTheme();if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];renderTabs();renderActive();saveLocal();};
   if(snap.exists){
     const data=snap.data()||{};
     const serverHas=Array.isArray(data.entries)&&data.entries.length>0;
@@ -1240,7 +1299,7 @@ pinGate();
     if(data&&data.entries&&(data.updatedAt||0)>(state.updatedAt||0)){
       state=data;normalize();applyTheme();
       if(months().indexOf(curMonth)<0)curMonth=months()[months().length-1];
-      renderTabs();render();saveLocal();
+      renderTabs();renderActive();saveLocal();
     }
   },()=>{});
   flushDb(); // envia edições feitas durante o carregamento (antes do banco conectar)
