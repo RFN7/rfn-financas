@@ -384,5 +384,35 @@ load();
   function openCx(){renderCx();ov.classList.add("show");}
   document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Caixinhas")>=0){n.removeAttribute("data-href");n.onclick=function(){openCx();};}});
 })();
+
+/* ===== Importar fatura (IA) ===== */
+(function(){
+  var AK="rfn7-cofre-a7Fk29Lm4Qx8", QK="rfn-tap-a7Fk29Lm";
+  var CATS="Mercado, Alimentação, Transporte, Farmácia, Lazer, Contas de casa, Compras, Assinaturas, Cartão de crédito, Saúde, Outros";
+  var files=[], itens=[];
+  async function qa(a,ex){var r=await fetch(SB+"/functions/v1/quickadd",{method:"POST",headers:{"Content-Type":"application/json","x-rfn-key":QK},body:JSON.stringify(Object.assign({action:a,cofre},ex||{}))});return r.json();}
+  var caix=null;document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Caixinhas")>=0)caix=n;});
+  var imp=document.createElement("div");imp.className="snav";imp.innerHTML='<span class="e">📎</span>Importar fatura';
+  if(caix&&caix.parentNode)caix.parentNode.insertBefore(imp,caix.nextSibling); else {var sd=document.querySelector(".side");if(sd)sd.appendChild(imp);}
+  imp.onclick=function(){openImp();};
+  var ov=document.createElement("div");ov.className="modal";ov.id="impView";
+  ov.innerHTML='<div class="sheet" style="max-width:440px"><div class="sheet-h"><span>📎 Importar fatura</span><button id="impClose">✕</button></div><label class="upload">📸 Escolher foto(s) ou PDF da fatura<br><small>toque aqui</small><input type="file" id="impFile" accept="image/*,application/pdf" multiple style="display:none"></label><div id="impFiles" style="font-size:12px;color:var(--mut);margin:8px 0"></div><button class="gbtn save2" id="impGo" style="display:none">🤖 Analisar com IA</button><div id="impMsg" style="text-align:center;font-size:12.5px;margin-top:10px"></div><div id="impResult"></div></div>';
+  document.body.appendChild(ov);
+  function openImp(){files=[];itens=[];document.getElementById("impFiles").textContent="";document.getElementById("impResult").innerHTML="";document.getElementById("impMsg").textContent="";document.getElementById("impGo").style.display="none";document.getElementById("impFile").value="";ov.classList.add("show");}
+  document.getElementById("impClose").onclick=function(){ov.classList.remove("show");};
+  document.getElementById("impFile").onchange=function(){files=Array.prototype.slice.call(this.files||[]);document.getElementById("impFiles").textContent=files.length?files.length+" arquivo(s) selecionado(s)":"";document.getElementById("impGo").style.display=files.length?"block":"none";};
+  function toB64(f){return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result);};r.readAsDataURL(f);});}
+  document.getElementById("impGo").onclick=async function(){
+    document.getElementById("impMsg").style.color="var(--mut)";document.getElementById("impMsg").textContent="🤖 Lendo a fatura… (pode levar alguns segundos)";
+    var imgs=[];for(var i=0;i<files.length;i++){var b=await toB64(files[i]);imgs.push({data:b,media_type:files[i].type||"image/jpeg"});}
+    var prompt="Extraia TODOS os lançamentos desta fatura/cupom. Responda SOMENTE JSON {\"itens\":[{\"desc\":\"texto\",\"cat\":\"uma de: "+CATS+"\",\"amount\":numero,\"date\":\"YYYY-MM-DD\",\"parc\":numero}]}. Use a data de cada compra; se houver parcela X de Y, parc=Y.";
+    try{var r=await fetch(SB+"/functions/v1/analyze",{method:"POST",headers:{"Content-Type":"application/json","x-rfn-key":AK},body:JSON.stringify({images:imgs,prompt:prompt})});var d=await r.json();itens=(d&&d.itens)||[];}catch(e){itens=[];}
+    if(!itens.length){document.getElementById("impMsg").style.color="var(--neg)";document.getElementById("impMsg").textContent="Não consegui ler. Tente uma foto mais nítida ou o PDF.";return;}
+    document.getElementById("impMsg").textContent="";
+    var tot=itens.reduce(function(s,it){return s+(Number(it.amount)||0);},0);
+    document.getElementById("impResult").innerHTML='<div style="font-size:12.5px;margin:8px 0;color:var(--mut)">Encontrei <b style="color:var(--ink)">'+itens.length+'</b> lançamentos ('+brl0(tot)+'):</div>'+itens.map(function(it){return '<div class="rec"><div class="t"><b>'+(it.desc||it.cat||"—")+'</b><small>'+(it.cat||"")+" · "+(it.date||"")+((it.parc&&it.parc>1)?" · "+it.parc+"x":"")+'</small></div><span style="color:var(--neg);font-weight:700">−'+brl0(it.amount)+'</span></div>';}).join('')+'<button class="gbtn save2" id="impAdd" style="margin-top:12px">✅ Adicionar todos ('+itens.length+')</button>';
+    document.getElementById("impAdd").onclick=async function(){this.disabled=true;this.textContent="Adicionando…";var ok=0;for(var i=0;i<itens.length;i++){var it=itens[i];var rr=await qa("add",{amount:String(it.amount),cat:it.cat||"Outros",desc:it.desc||it.cat,date:it.date,parc:it.parc||1,type:"out"});if(rr&&rr.ok)ok++;}await load();toast("✅ "+ok+" lançamentos adicionados!");ov.classList.remove("show");};
+  };
+})();
 </script>
 </body></html>
