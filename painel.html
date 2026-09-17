@@ -311,5 +311,47 @@ $("#fFile").onchange=function(){const f=this.files[0];if(!f)return;const rd=new 
 $("#saveEdit").onclick=()=>{profiles[editing].name=$("#fName").value.trim()||profiles[editing].name;profiles[editing].img=pendingImg;applyImg(editing);save();greetNow();$("#editModal").classList.remove("show");toast("✅ Perfil salvo!");};
 
 load();
+
+/* ===== Lançamentos (view) ===== */
+(function(){
+  var QK="rfn-tap-a7Fk29Lm";
+  var CATLIST=[["🛒","Mercado"],["🍔","Alimentação"],["🚗","Transporte"],["💊","Farmácia"],["🎬","Lazer"],["🏠","Contas de casa"],["🛍️","Compras"],["📱","Assinaturas"],["💳","Cartão de crédito"],["❤️","Saúde"],["➕","Outros"]];
+  var lancMonth=(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,7); var editId=null, lfType="out";
+  async function qa(a,ex){var r=await fetch(SB+"/functions/v1/quickadd",{method:"POST",headers:{"Content-Type":"application/json","x-rfn-key":QK},body:JSON.stringify(Object.assign({action:a,cofre},ex||{}))});return r.json();}
+  function em(cat){var f=CATLIST.find(function(c){return c[1]===cat;});return f?f[0]:"💠";}
+  function shiftM(mo,d){var y=+mo.slice(0,4),m=+mo.slice(5,7)-1+d;var dt=new Date(y,m,1);return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");}
+  var ov=document.createElement("div");ov.className="modal";ov.id="lancView";
+  ov.innerHTML='<div class="sheet" style="max-width:460px"><div class="sheet-h"><span>📒 Lançamentos</span><button id="lancClose">✕</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><button class="gbtn" id="lancPrev" style="flex:0 0 auto;padding:8px 12px">‹</button><b id="lancMonthLbl" style="font-size:13px"></b><button class="gbtn" id="lancNext" style="flex:0 0 auto;padding:8px 12px">›</button></div><button class="gbtn save2" id="lancNew" style="margin-bottom:10px">➕ Novo lançamento</button><div id="lancList"></div></div>';
+  document.body.appendChild(ov);
+  var fm=document.createElement("div");fm.className="modal";fm.id="lancForm";
+  fm.innerHTML='<div class="sheet" style="max-width:400px"><div class="sheet-h"><span id="lfTitle">Novo</span><button id="lfClose">✕</button></div><div class="tabs2"><div class="tab2 on" data-t="out">Saída</div><div class="tab2" data-t="in">Entrada</div></div><div class="field">Valor</div><input class="inp" id="lfVal" inputmode="decimal" placeholder="R$ 0,00"><div class="field">Categoria</div><select class="inp" id="lfCat"></select><div class="field">Descrição</div><input class="inp" id="lfDesc" placeholder="opcional"><div style="display:flex;gap:8px"><div style="flex:1"><div class="field">Data</div><input class="inp" id="lfDate" type="date"></div><div style="width:96px"><div class="field">Parcelas</div><input class="inp" id="lfParc" type="number" value="1" min="1"></div></div><div class="rowbtn"><button class="gbtn" id="lfDel" style="display:none;color:var(--neg)">🗑 Excluir</button><button class="gbtn save2" id="lfSave">Salvar</button></div><div id="lfMsg" style="text-align:center;font-size:12px;margin-top:8px"></div></div>';
+  document.body.appendChild(fm);
+  var sel=fm.querySelector("#lfCat");CATLIST.forEach(function(c){var o=document.createElement("option");o.value=c[1];o.textContent=c[0]+" "+c[1];sel.appendChild(o);});
+  fm.querySelectorAll(".tab2").forEach(function(t){t.onclick=function(){fm.querySelectorAll(".tab2").forEach(function(x){x.classList.remove("on");});t.classList.add("on");lfType=t.dataset.t;};});
+  function renderLanc(){var mo=lancMonth;var d=new Date(mo+"-01T12:00:00");document.getElementById("lancMonthLbl").textContent=MES[d.getMonth()].charAt(0).toUpperCase()+MES[d.getMonth()].slice(1)+" "+mo.slice(0,4);
+    var ents=((DATA&&DATA.entries)||[]).filter(function(e){return (e.date||"").slice(0,7)===mo;}).sort(function(a,b){return (b.date||"").localeCompare(a.date||"");});
+    var box=document.getElementById("lancList");
+    if(!ents.length){box.innerHTML='<div style="color:var(--mut);font-size:13px;text-align:center;padding:22px 0">Nenhum lançamento neste mês.</div>';return;}
+    box.innerHTML=ents.map(function(e){var sig=e.type==="in"?"+":"−";var col=e.type==="in"?"var(--pos)":"var(--neg)";var dd=(e.date||"").slice(8,10)+"/"+(e.date||"").slice(5,7);var pc=(e.parc&&e.parc>1)?' · '+e.parc+'x':'';return '<div class="rec" data-id="'+e.id+'" style="cursor:pointer"><div style="width:30px;height:30px;border-radius:9px;background:var(--panel);display:grid;place-items:center;font-size:14px;flex:0 0 auto">'+em(e.cat)+'</div><div class="t"><b>'+(e.desc||e.cat||"—")+'</b><small>'+(e.cat||"")+" · "+dd+pc+'</small></div><span style="color:'+col+';font-family:ui-monospace,monospace;font-weight:700">'+sig+brl0(e.amount)+'</span></div>';}).join('');
+    box.querySelectorAll(".rec").forEach(function(r){r.onclick=function(){openForm(r.dataset.id);};});
+  }
+  function openForm(id){editId=id||null;document.getElementById("lfTitle").textContent=id?"Editar":"Novo lançamento";document.getElementById("lfDel").style.display=id?"block":"none";document.getElementById("lfMsg").textContent="";
+    var e=id?((DATA&&DATA.entries)||[]).find(function(x){return x.id===id;}):null;lfType=e?e.type:"out";
+    fm.querySelectorAll(".tab2").forEach(function(x){x.classList.toggle("on",x.dataset.t===lfType);});
+    document.getElementById("lfVal").value=e?String(e.amount).replace(".",","):"";document.getElementById("lfCat").value=e?e.cat:"Mercado";document.getElementById("lfDesc").value=e?(e.desc||""):"";document.getElementById("lfDate").value=e?e.date:(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,10);document.getElementById("lfParc").value=e?(e.parc||1):1;fm.classList.add("show");}
+  document.getElementById("lfSave").onclick=async function(){var val=document.getElementById("lfVal").value.trim();if(!val){document.getElementById("lfMsg").style.color="var(--neg)";document.getElementById("lfMsg").textContent="Digite o valor";return;}
+    var pl={amount:val,cat:document.getElementById("lfCat").value,desc:document.getElementById("lfDesc").value.trim(),type:lfType,date:document.getElementById("lfDate").value,parc:document.getElementById("lfParc").value};
+    document.getElementById("lfMsg").style.color="var(--mut)";document.getElementById("lfMsg").textContent="Salvando…";
+    var r=editId?await qa("edit",Object.assign({id:editId},pl)):await qa("add",pl);
+    if(r.ok){fm.classList.remove("show");await load();renderLanc();toast("✅ Salvo!");}else{document.getElementById("lfMsg").style.color="var(--neg)";document.getElementById("lfMsg").textContent="Erro: "+(r.error||"");}};
+  document.getElementById("lfDel").onclick=async function(){if(!editId)return;document.getElementById("lfMsg").textContent="Excluindo…";var r=await qa("undo",{id:editId});if(r.ok){fm.classList.remove("show");await load();renderLanc();toast("🗑 Excluído");}};
+  document.getElementById("lfClose").onclick=function(){fm.classList.remove("show");};
+  document.getElementById("lancClose").onclick=function(){ov.classList.remove("show");};
+  document.getElementById("lancNew").onclick=function(){openForm(null);};
+  document.getElementById("lancPrev").onclick=function(){lancMonth=shiftM(lancMonth,-1);renderLanc();};
+  document.getElementById("lancNext").onclick=function(){lancMonth=shiftM(lancMonth,1);renderLanc();};
+  function openLanc(){lancMonth=(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,7);renderLanc();ov.classList.add("show");}
+  document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Lançamentos")>=0){n.removeAttribute("data-href");n.onclick=function(){openLanc();};}});
+})();
 </script>
 </body></html>
