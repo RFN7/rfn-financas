@@ -414,5 +414,42 @@ load();
     document.getElementById("impAdd").onclick=async function(){this.disabled=true;this.textContent="Adicionando…";var ok=0;for(var i=0;i<itens.length;i++){var it=itens[i];var rr=await qa("add",{amount:String(it.amount),cat:it.cat||"Outros",desc:it.desc||it.cat,date:it.date,parc:it.parc||1,type:"out"});if(rr&&rr.ok)ok++;}await load();toast("✅ "+ok+" lançamentos adicionados!");ov.classList.remove("show");};
   };
 })();
+
+/* ===== Categorias (view) ===== */
+(function(){
+  var mC=(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,7);
+  function shiftM(mo,d){var y=+mo.slice(0,4),m=+mo.slice(5,7)-1+d;var dt=new Date(y,m,1);return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");}
+  var ov=document.createElement("div");ov.className="modal";ov.id="catView";
+  ov.innerHTML='<div class="sheet" style="max-width:440px"><div class="sheet-h"><span>🗂️ Categorias</span><button id="catClose">✕</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><button class="gbtn" id="catPrev" style="flex:0 0 auto;padding:8px 12px">‹</button><b id="catLbl" style="font-size:13px"></b><button class="gbtn" id="catNext" style="flex:0 0 auto;padding:8px 12px">›</button></div><div id="catList"></div></div>';
+  document.body.appendChild(ov);
+  function renderCat(){var mo=mC;var d=new Date(mo+"-01T12:00:00");document.getElementById("catLbl").textContent=MES[d.getMonth()].charAt(0).toUpperCase()+MES[d.getMonth()].slice(1)+" "+mo.slice(0,4);
+    var agg={},tot=0;((DATA&&DATA.entries)||[]).forEach(function(e){if((e.date||"").slice(0,7)!==mo||e.type==="in")return;var v=Number(e.amount)||0;agg[e.cat||"Outros"]=(agg[e.cat||"Outros"]||0)+v;tot+=v;});
+    var arr=Object.keys(agg).map(function(k){return [k,agg[k]];}).sort(function(a,b){return b[1]-a[1];});
+    var box=document.getElementById("catList");
+    if(!arr.length){box.innerHTML='<div style="color:var(--mut);font-size:13px;text-align:center;padding:20px 0">Sem gastos neste mês.</div>';return;}
+    box.innerHTML=arr.map(function(c){var p=tot?Math.round(c[1]/tot*100):0;return '<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><b>'+(CATEMO[c[0]]||"•")+" "+c[0]+'</b><span style="font-family:ui-monospace,monospace">'+brl0(c[1])+" · "+p+'%</span></div><div style="height:8px;background:var(--bd);border-radius:20px;overflow:hidden"><i style="display:block;height:100%;width:'+p+'%;background:var(--a1)"></i></div></div>';}).join('')+'<div style="text-align:right;font-size:12px;color:var(--mut);margin-top:10px">Total: <b style="color:var(--ink)">'+brl0(tot)+'</b></div>';
+  }
+  document.getElementById("catClose").onclick=function(){ov.classList.remove("show");};
+  document.getElementById("catPrev").onclick=function(){mC=shiftM(mC,-1);renderCat();};
+  document.getElementById("catNext").onclick=function(){mC=shiftM(mC,1);renderCat();};
+  document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Categorias")>=0){n.removeAttribute("data-href");n.onclick=function(){mC=(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,7);renderCat();ov.classList.add("show");};}});
+})();
+/* ===== Projeções (view) ===== */
+(function(){
+  function addM(mo,n){var y=+mo.slice(0,4),m=+mo.slice(5,7)-1+n;var dt=new Date(y,m,1);return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");}
+  var ov=document.createElement("div");ov.className="modal";ov.id="projView";
+  ov.innerHTML='<div class="sheet" style="max-width:460px"><div class="sheet-h"><span>📈 Projeções</span><button id="projClose">✕</button></div><div id="projBody"></div></div>';
+  document.body.appendChild(ov);
+  function renderProj(){var ents=(DATA&&DATA.entries)||[];var byM={};ents.forEach(function(e){if(e.type==="in")return;var k=(e.date||"").slice(0,7);if(!k)return;byM[k]=(byM[k]||0)+(Number(e.amount)||0);});
+    var months=Object.keys(byM).sort();var last6=months.slice(-6);var avg=last6.length?last6.reduce(function(s,k){return s+byM[k];},0)/last6.length:0;
+    var mo=(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,7);var fix=0;ents.forEach(function(e){if(e.type!=="in"&&e.recur&&(e.date||"").slice(0,7)===mo)fix+=Number(e.amount)||0;});
+    var parc=ents.filter(function(e){return e.type!=="in"&&e.parc&&e.parc>1;});
+    var bars="";for(var i=1;i<=6;i++){var mm=addM(mo,i);var d=new Date(mm+"-01T12:00:00");bars+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%"><div style="font-family:ui-monospace,monospace;font-size:9px;color:var(--mut)">'+(avg/1000).toFixed(1).replace(".",",")+'k</div><div style="width:70%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--a1),var(--a2));height:72%"></div><div style="font-size:10px;color:var(--mut)">'+MES[d.getMonth()].slice(0,3)+'</div></div>';}
+    var pHtml=parc.length?parc.map(function(e){var per=(Number(e.amount)||0)/e.parc;var quita=e.date?addM((e.date||"").slice(0,7),e.parc-1):"";return '<div class="rec"><div style="width:28px;height:28px;border-radius:8px;background:var(--panel);display:grid;place-items:center;font-size:13px;flex:0 0 auto">💳</div><div class="t"><b>'+(e.desc||e.cat)+'</b><small>'+e.parc+'x de '+brl0(per)+(quita?" · quita "+quita:"")+'</small></div><span style="color:var(--warn);font-weight:700">'+brl0(e.amount)+'</span></div>';}).join(''):'<div style="color:var(--mut);font-size:12.5px;padding:8px 0">Sem parcelamentos ativos.</div>';
+    document.getElementById("projBody").innerHTML='<div style="background:var(--panel2);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px"><div style="font-weight:700;font-size:13px;margin-bottom:10px">🔮 Previsão — próximos 6 meses</div><div style="display:flex;align-items:flex-end;gap:8px;height:120px">'+bars+'</div><div style="text-align:center;color:var(--mut);font-size:11px;margin-top:6px">média de gasto ~ '+brl0(avg)+'/mês</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div style="background:var(--panel2);border:1px solid var(--bd);border-radius:14px;padding:12px"><div style="color:var(--mut);font-size:11px">Gasto médio/mês</div><div style="font-weight:800;font-size:16px;color:var(--neg)">'+brl0(avg)+'</div></div><div style="background:var(--panel2);border:1px solid var(--bd);border-radius:14px;padding:12px"><div style="color:var(--mut);font-size:11px">Fixos/mês</div><div style="font-weight:800;font-size:16px">'+brl0(fix)+'</div></div></div><div style="font-weight:700;font-size:13px;margin-bottom:6px">💳 Parcelas ativas</div>'+pHtml;
+  }
+  document.getElementById("projClose").onclick=function(){ov.classList.remove("show");};
+  document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Projeções")>=0){n.removeAttribute("data-href");n.onclick=function(){renderProj();ov.classList.add("show");};}});
+})();
 </script>
 </body></html>
