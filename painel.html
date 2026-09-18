@@ -155,6 +155,20 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 /* skeleton de carregamento */
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel{background:linear-gradient(90deg,var(--panel2) 25%,#242922 50%,var(--panel2) 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:10px}
+/* micro-animações */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.content>*{animation:fadeUp .45s both}
+.content>*:nth-child(1){animation-delay:.02s}
+.content>*:nth-child(2){animation-delay:.08s}
+.content>*:nth-child(3){animation-delay:.14s}
+.content>*:nth-child(4){animation-delay:.20s}
+.content>*:nth-child(5){animation-delay:.26s}
+.content>*:nth-child(6){animation-delay:.32s}
+.card,.kpi{transition:transform .15s ease,box-shadow .15s ease}
+.card:hover,.kpi:hover{transform:translateY(-2px);box-shadow:0 10px 26px -14px #000}
+.card:active,.kpi:active{transform:scale(.992)}
+@media (hover:none){.card:hover,.kpi:hover{transform:none;box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.content>*{animation:none}.card,.kpi{transition:none}}
 /* ===== MOBILE ===== */
 @media (max-width:760px){
   body{padding:10px 8px 30px}
@@ -285,6 +299,7 @@ const MESAB=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","
 const CATEMO={"Mercado":"🛒","Alimentação":"🍔","Transporte":"🚗","Farmácia":"💊","Lazer":"🎬","Contas de casa":"🏠","Compras":"🛍️","Assinaturas":"📱","Cartão de crédito":"💳","Saúde":"❤️","Educação":"📚","Vestuário":"👕","Outros":"➕"};
 const $=s=>document.querySelector(s);
 const brl0=n=>"R$ "+Math.round(Number(n||0)).toLocaleString("pt-BR");
+function countUp(el,to){to=Number(to)||0;var dur=700,st=null,neg=to<0,abs=Math.abs(to);function step(ts){if(!st)st=ts;var p=Math.min((ts-st)/dur,1);var e=1-Math.pow(1-p,3);if(p>=1){el.textContent=brl0(to);return;}el.textContent=(neg?"−":"")+"R$ "+Math.round(abs*e).toLocaleString("pt-BR");requestAnimationFrame(step);}requestAnimationFrame(step);}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(window._t);window._t=setTimeout(()=>e.classList.remove("show"),2200);}
 function ymNow(){return new Date(Date.now()-3*3600*1000).toISOString().slice(0,7);}
 let cofre="casa", DATA=null;
@@ -344,10 +359,11 @@ function render(){
   const mini=months.map(k=>byMonth[k]||0),mn=Math.max(1,...mini);
   const miniBars=(hi)=>mini.map((v,i)=>'<i class="'+(i===mini.length-1?'a':'')+'" style="height:'+Math.max(15,v/mn*100)+'%"></i>').join('');
   $("#kpis").innerHTML=
-    '<div class="kpi hi"><div class="ico">💰</div><div class="l">Ganhos do mês</div><div class="v">'+brl0(inc)+'</div><div class="d">↗ entradas</div><div class="mini">'+miniBars(1)+'</div></div>'+
-    '<div class="kpi"><div class="ico">💸</div><div class="l">Gastos do mês</div><div class="v">'+brl0(out)+'</div><div class="d">saídas de '+monNome+'</div><div class="mini">'+miniBars(0)+'</div></div>'+
-    '<div class="kpi"><div class="ico">⚖️</div><div class="l">Saldo do mês</div><div class="v" style="color:'+(saldo>=0?'var(--pos)':'var(--neg)')+'">'+brl0(saldo)+'</div><div class="d">'+(saldo>=0?'sobrou 🎉':'gastou mais que ganhou')+'</div></div>'+
-    '<div class="kpi"><div class="ico">🐷</div><div class="l">Guardado</div><div class="v">'+brl0(guardado)+'</div><div class="d">↗ nas caixinhas</div></div>';
+    '<div class="kpi hi"><div class="ico">💰</div><div class="l">Ganhos do mês</div><div class="v" data-count="'+inc+'">R$ 0</div><div class="d">↗ entradas</div><div class="mini">'+miniBars(1)+'</div></div>'+
+    '<div class="kpi"><div class="ico">💸</div><div class="l">Gastos do mês</div><div class="v" data-count="'+out+'">R$ 0</div><div class="d">saídas de '+monNome+'</div><div class="mini">'+miniBars(0)+'</div></div>'+
+    '<div class="kpi"><div class="ico">⚖️</div><div class="l">Saldo do mês</div><div class="v" data-count="'+saldo+'" style="color:'+(saldo>=0?'var(--pos)':'var(--neg)')+'">R$ 0</div><div class="d">'+(saldo>=0?'sobrou 🎉':'gastou mais que ganhou')+'</div></div>'+
+    '<div class="kpi"><div class="ico">🐷</div><div class="l">Guardado</div><div class="v" data-count="'+guardado+'">R$ 0</div><div class="d">↗ nas caixinhas</div></div>';
+  document.querySelectorAll('#kpis .v[data-count]').forEach(function(el){countUp(el,Number(el.dataset.count));});
 
   // ---- heatmap gastos por dia (mês atual) ----
   const y=parseInt(mo.slice(0,4),10),firstDow=new Date(y,moIdx,1).getDay(),daysIn=new Date(y,moIdx+1,0).getDate();
