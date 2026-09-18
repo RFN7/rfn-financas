@@ -269,7 +269,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
         <div class="inbox"><input id="msg" placeholder="Pergunte algo…"><button class="send" id="sendBtn">➤</button></div>
       </div>
 
-      <div class="card"><div class="ct">Últimos lançamentos <em data-href="index.html">ver tudo</em></div>
+      <div class="card"><div class="ct">Últimos lançamentos <em id="verTudo" style="cursor:pointer">ver tudo</em></div>
         <div class="thead"><span>Data</span><span>Descrição</span><span>Categoria</span><span style="text-align:right">Valor</span></div>
         <div id="txlist"></div>
       </div>
@@ -325,6 +325,7 @@ document.querySelectorAll(".snav").forEach(n=>n.onclick=()=>{if(n.dataset.href){
 document.querySelectorAll("[data-focus]").forEach(el=>el.onclick=()=>$("#msg").focus());
 document.querySelectorAll("[data-toast]").forEach(el=>el.dataset.act||(el.onclick=()=>toast(el.dataset.toast)));
 document.querySelectorAll("[data-href]").forEach(el=>el.classList.contains("snav")||(el.onclick=()=>location.href=el.dataset.href));
+var _vt=document.getElementById("verTudo");if(_vt)_vt.onclick=function(){var n=[].slice.call(document.querySelectorAll(".snav")).filter(function(x){return x.textContent.indexOf("Lançamentos")>=0;})[0];if(n)n.click();};
 // perfis
 document.querySelectorAll("#userSw .pf").forEach(p=>p.onclick=(e)=>{e.stopPropagation();document.querySelectorAll("#userSw .pf").forEach(x=>x.classList.remove("on"));p.classList.add("on");greetNow();toast("Perfil: "+profiles[p.dataset.prof].name);});
 function activeProf(){const el=document.querySelector("#userSw .pf.on");return el?el.dataset.prof:"me";}
