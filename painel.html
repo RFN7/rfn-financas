@@ -152,6 +152,34 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .gbtn{flex:1;border:1px solid var(--bd);background:var(--panel2);color:var(--ink);border-radius:11px;padding:11px;font-size:12.5px;font-weight:700;cursor:pointer}
 .save2{background:var(--a1);color:var(--aink);border:0}
 .upload{display:block;text-align:center;border:1px dashed var(--bd);border-radius:12px;padding:22px;color:var(--mut);font-size:12.5px;cursor:pointer}
+/* skeleton de carregamento */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel{background:linear-gradient(90deg,var(--panel2) 25%,#242922 50%,var(--panel2) 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:10px}
+/* ===== MOBILE ===== */
+@media (max-width:760px){
+  body{padding:10px 8px 30px}
+  .scroll{overflow-x:visible}
+  .dash{min-width:0;max-width:100%;border-radius:18px;padding:12px}
+  .top{gap:8px;margin-bottom:12px}
+  .top .tico{width:34px;height:34px}
+  .body{grid-template-columns:1fr;gap:12px}
+  .side{display:flex;flex-direction:row;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px;border-radius:14px;scrollbar-width:none}
+  .side::-webkit-scrollbar{display:none}
+  .side .logoav,.side .motto,.side .sgrp{display:none}
+  .snav{flex:0 0 auto;white-space:nowrap;margin-bottom:0;padding:8px 12px;border-radius:20px;background:var(--panel2)}
+  .snav.on{background:var(--a1);color:var(--aink)}
+  .suser{flex:0 0 auto;margin-top:0;white-space:nowrap}
+  .hh{flex-wrap:wrap;gap:8px}
+  .hh h1{font-size:18px;width:100%}
+  .hh .rr{flex-wrap:wrap}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi .v{font-size:17px}
+  .mid{grid-template-columns:1fr}
+  .bot{grid-template-columns:1fr}
+  .dwrap{flex-wrap:wrap;justify-content:center}
+  .thead,.trow{grid-template-columns:42px 1fr 84px}
+  .thead span:nth-child(3),.trow .badge{display:none}
+}
 </style></head><body>
 <div class="themes"><span class="lb">Tema:</span>
   <button class="tbtn on" data-t="lime"><span class="sw" style="background:#c9f24a"></span>Limão</button>
@@ -385,6 +413,18 @@ document.querySelectorAll(".tab2").forEach(t=>t.onclick=()=>{document.querySelec
 $("#fFile").onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{pendingImg=rd.result;setBig();};rd.readAsDataURL(f);};
 $("#saveEdit").onclick=()=>{profiles[editing].name=$("#fName").value.trim()||profiles[editing].name;profiles[editing].img=pendingImg;applyImg(editing);save();greetNow();$("#editModal").classList.remove("show");toast("✅ Perfil salvo!");};
 
+// ---- skeletons de carregamento ----
+function showSkel(){
+  var k='';for(var i=0;i<4;i++)k+='<div class="kpi"><div class="skel" style="height:64px"></div></div>';
+  $("#kpis").innerHTML=k;
+  $("#monthBars").innerHTML='<div class="skel" style="height:110px;width:100%"></div>';
+  $("#heat").innerHTML='<div class="skel" style="height:150px;grid-column:1/-1"></div>';
+  $("#rank").innerHTML='<div class="skel" style="height:120px;width:100%"></div>';
+  $("#leg").innerHTML='<div class="skel" style="height:110px;width:100%"></div>';
+  $("#cbars").innerHTML='<div class="skel" style="height:120px;width:100%"></div>';
+  $("#txlist").innerHTML='<div class="skel" style="height:130px;width:100%;margin-top:8px"></div>';
+}
+showSkel();
 load();
 
 /* ===== Lançamentos (view) ===== */
