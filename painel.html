@@ -431,7 +431,7 @@ $("#closeEdit").onclick=()=>$("#editModal").classList.remove("show");
 $("#cancelEdit").onclick=()=>$("#editModal").classList.remove("show");
 $("#randBtn").onclick=()=>genGrid();
 document.querySelectorAll(".tab2").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab2").forEach(x=>x.classList.remove("on"));t.classList.add("on");document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));$("#pane-"+t.dataset.pane).classList.add("on");});
-$("#fFile").onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{pendingImg=rd.result;setBig();};rd.readAsDataURL(f);};
+$("#fFile").onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const S=256,cv=document.createElement("canvas");cv.width=S;cv.height=S;const ctx=cv.getContext("2d");const m=Math.min(img.width,img.height),sx=(img.width-m)/2,sy=(img.height-m)/2;ctx.drawImage(img,sx,sy,m,m,0,0,S,S);try{pendingImg=cv.toDataURL("image/jpeg",0.85);}catch(e){pendingImg=rd.result;}setBig();};img.onerror=()=>{pendingImg=rd.result;setBig();};img.src=rd.result;};rd.readAsDataURL(f);};
 $("#saveEdit").onclick=()=>{profiles[editing].name=$("#fName").value.trim()||profiles[editing].name;profiles[editing].img=pendingImg;applyImg(editing);save();greetNow();$("#editModal").classList.remove("show");toast("✅ Perfil salvo!");};
 
 // ---- skeletons de carregamento ----
