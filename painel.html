@@ -169,6 +169,10 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .card:active,.kpi:active{transform:scale(.992)}
 @media (hover:none){.card:hover,.kpi:hover{transform:none;box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.content>*{animation:none}.card,.kpi{transition:none}}
+/* tooltip de gráficos */
+#chartTip{position:fixed;z-index:40;background:var(--ink);color:var(--bg);font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:8px;pointer-events:none;opacity:0;transform:translate(-50%,-140%);transition:opacity .12s;white-space:nowrap;box-shadow:0 8px 20px -6px #000;max-width:80vw}
+#chartTip.show{opacity:1}
+.bar,.cbar,.donut{cursor:pointer}
 /* ===== MOBILE ===== */
 @media (max-width:760px){
   body{padding:10px 8px 30px}
@@ -353,7 +357,7 @@ function render(){
   if(!months.includes(mo))months.push(mo);
   months=months.slice(-5);
   const mMax=Math.max(1,...months.map(k=>byMonth[k]||0));
-  $("#monthBars").innerHTML=months.map(k=>{const val=byMonth[k]||0,h=Math.max(4,val/mMax*100),on=k===mo;return '<div class="bar'+(on?' on':'')+'">'+(on?'<div class="tip">'+brl0(val)+'</div>':'')+'<div class="col" style="height:'+h+'%"></div><small>'+MESAB[parseInt(k.slice(5,7),10)-1]+'</small></div>';}).join('');
+  $("#monthBars").innerHTML=months.map(k=>{const val=byMonth[k]||0,h=Math.max(4,val/mMax*100),on=k===mo,nm=MES[parseInt(k.slice(5,7),10)-1];return '<div class="bar'+(on?' on':'')+'" data-tip="'+nm[0].toUpperCase()+nm.slice(1)+': '+brl0(val)+'">'+(on?'<div class="tip">'+brl0(val)+'</div>':'')+'<div class="col" style="height:'+h+'%"></div><small>'+MESAB[parseInt(k.slice(5,7),10)-1]+'</small></div>';}).join('');
 
   // ---- KPIs (com mini-barras da série mensal) ----
   const mini=months.map(k=>byMonth[k]||0),mn=Math.max(1,...mini);
@@ -378,7 +382,8 @@ function render(){
   // ---- donut categorias ----
   const cols=["var(--a1)","#f97316","#fbbf24","#a78bfa","#38bdf8","#F472B6"];
   const top=Object.entries(cat).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  if(out>0&&top.length){let acc=0,segs=[];top.forEach((c,i)=>{const p=c[1]/out*100;segs.push(cols[i%cols.length]+" "+acc.toFixed(2)+"% "+(acc+p).toFixed(2)+"%");acc+=p;});
+  window._donutSegs=[];
+  if(out>0&&top.length){let acc=0,segs=[];top.forEach((c,i)=>{const p=c[1]/out*100;segs.push(cols[i%cols.length]+" "+acc.toFixed(2)+"% "+(acc+p).toFixed(2)+"%");window._donutSegs.push({cat:c[0],val:c[1],a:acc,b:acc+p});acc+=p;});
     $("#donut").style.background="conic-gradient("+segs.join(",")+")";
     $("#donutTot").innerHTML=brl0(out)+"<small>total</small>";
     $("#leg").innerHTML=top.map((c,i)=>'<div class="r"><span class="d" style="background:'+cols[i%cols.length]+'"></span>'+(CATEMO[c[0]]||"•")+" "+c[0]+' <b>'+brl0(c[1])+'</b></div>').join('');
@@ -388,7 +393,7 @@ function render(){
   $("#rank").innerHTML=top.length?top.slice(0,4).map((c,i)=>'<div class="rk"><span class="ic" style="width:26px;height:26px;border-radius:8px;background:var(--sideb);display:grid;place-items:center;font-size:13px;flex:0 0 auto">'+(CATEMO[c[0]]||"💠")+'</span><div class="t"><b>'+c[0]+'</b><small>'+(out>0?Math.round(c[1]/out*100):0)+'% dos gastos</small></div><span class="amt" style="color:'+cols[i%cols.length]+'">'+brl0(c[1])+'</span></div>').join(''):'<div style="color:var(--mut);font-size:12px">Nenhum gasto neste mês.</div>';
 
   // ---- caixinhas barras ----
-  $("#cbars").innerHTML=boxes.length?boxes.slice(0,4).map(b=>{const p=b.target?Math.min(Math.round(b.saved/b.target*100),100):0;return '<div class="cbar"><div class="col" style="height:'+Math.max(2,p)+'%"></div><small>'+(b.emoji||"🐷")+" "+b.name+'<br><b style="color:var(--a1)">'+p+'%</b></small></div>';}).join(''):'<div style="color:var(--mut);font-size:12px;align-self:center">Nenhuma caixinha.</div>';
+  $("#cbars").innerHTML=boxes.length?boxes.slice(0,4).map(b=>{const p=b.target?Math.min(Math.round(b.saved/b.target*100),100):0;return '<div class="cbar" data-tip="'+(b.emoji||"🐷")+" "+b.name+': '+brl0(b.saved)+(b.target?' de '+brl0(b.target):'')+' ('+p+'%)"><div class="col" style="height:'+Math.max(2,p)+'%"></div><small>'+(b.emoji||"🐷")+" "+b.name+'<br><b style="color:var(--a1)">'+p+'%</b></small></div>';}).join(''):'<div style="color:var(--mut);font-size:12px;align-self:center">Nenhuma caixinha.</div>';
 
   // ---- últimos lançamentos ----
   const rec=ents.slice(-6).reverse();
@@ -440,6 +445,18 @@ function showSkel(){
   $("#cbars").innerHTML='<div class="skel" style="height:120px;width:100%"></div>';
   $("#txlist").innerHTML='<div class="skel" style="height:130px;width:100%;margin-top:8px"></div>';
 }
+// ---- tooltips dos gráficos (toque/hover) ----
+function initTips(){
+  if(window._tipInit)return;window._tipInit=1;
+  var tip=document.createElement("div");tip.id="chartTip";document.body.appendChild(tip);var hideT;
+  function show(x,y,txt){tip.textContent=txt;tip.style.left=x+"px";tip.style.top=y+"px";tip.classList.add("show");clearTimeout(hideT);hideT=setTimeout(function(){tip.classList.remove("show");},1600);}
+  function hide(){tip.classList.remove("show");}
+  function at(e){var el=e.target.closest&&e.target.closest("[data-tip]");if(el){show(e.clientX,e.clientY,el.getAttribute("data-tip"));return;}var d=e.target.closest&&e.target.closest("#donut");if(d&&window._donutSegs&&window._donutSegs.length){var r=d.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;var ang=Math.atan2(e.clientX-cx,-(e.clientY-cy))*180/Math.PI;if(ang<0)ang+=360;var pct=ang/360*100;var s=window._donutSegs.find(function(z){return pct>=z.a&&pct<z.b;});if(s){show(e.clientX,e.clientY,s.cat+": "+brl0(s.val));return;}}}
+  document.addEventListener("pointermove",at);
+  document.addEventListener("pointerdown",at);
+  document.addEventListener("pointerout",function(e){if(e.target.closest&&(e.target.closest("[data-tip]")||e.target.closest("#donut")))hide();});
+}
+initTips();
 showSkel();
 load();
 
