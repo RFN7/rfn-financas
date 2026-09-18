@@ -9,6 +9,12 @@
 :root[data-theme="lime"]{--bg:#0a0b0a;--panel:#141614;--panel2:#1a1d1a;--bd:#232823;--ink:#eef2ee;--mut:#8a938a;--a1:#c9f24a;--aink:#12200a;--a2:#a7d63a;--pos:#c9f24a;--warn:#f97316;--neg:#ff7b6b;--sideb:#0f110f;--onbg:#c9f24a}
 :root[data-theme="blue"]{--bg:#070b14;--panel:#0e1729;--panel2:#0f1a30;--bd:#1a2740;--ink:#E6ECF5;--mut:#8A98B5;--a1:#3B82F6;--aink:#fff;--a2:#22D3EE;--pos:#34D399;--warn:#F59E0B;--neg:#FB7185;--sideb:#0b1424;--onbg:#3B82F6}
 :root[data-theme="red"]{--bg:#0a0608;--panel:#150d11;--panel2:#1a1013;--bd:#331d22;--ink:#F1ECEE;--mut:#a8969b;--a1:#FF3B57;--aink:#fff;--a2:#F472B6;--pos:#34D399;--warn:#F59E0B;--neg:#fb7185;--sideb:#150b0e;--onbg:#FF3B57}
+/* modo claro */
+:root[data-mode="light"]{--bg:#f4f6f3;--panel:#ffffff;--panel2:#f6f8f4;--bd:#e4e8e1;--ink:#16201a;--mut:#6b756d;--sideb:#eef1ec;--pos:#2f9e44;--warn:#e08600}
+:root[data-mode="light"] .heat div{background:#e7ebe4}
+:root[data-mode="light"] .bar .col,:root[data-mode="light"] .kpi .mini i{background:#dbe0d6}
+:root[data-mode="light"] .skel{background:linear-gradient(90deg,#eef1ec 25%,#e2e6df 50%,#eef1ec 75%)}
+:root[data-mode="light"] .cbar b,:root[data-mode="light"] .chip:hover{color:#2f9e44}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;padding:14px 10px 40px;transition:.2s}
 .themes{display:flex;gap:8px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap;align-items:center}
@@ -203,6 +209,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   <button class="tbtn on" data-t="lime"><span class="sw" style="background:#c9f24a"></span>Limão</button>
   <button class="tbtn" data-t="blue"><span class="sw" style="background:#3B82F6"></span>Azul</button>
   <button class="tbtn" data-t="red"><span class="sw" style="background:#FF3B57"></span>Vermelho</button>
+  <button class="tbtn" id="modeBtn" style="margin-left:6px">🌙 Escuro</button>
 </div>
 <div class="scroll"><div class="dash">
   <div class="top">
@@ -311,14 +318,17 @@ let cofre="casa", DATA=null;
 // ---- estado salvo (tema + perfis) ----
 const store=JSON.parse(localStorage.getItem("rfn.dash.v1")||"{}");
 const profiles=Object.assign({me:{name:"Romero",img:null},fe:{name:"Fernanda",img:null}},store.profiles||{});
-function save(){localStorage.setItem("rfn.dash.v1",JSON.stringify({profiles,theme:document.documentElement.dataset.theme}));}
+function save(){localStorage.setItem("rfn.dash.v1",JSON.stringify({profiles,theme:document.documentElement.dataset.theme,mode:document.documentElement.dataset.mode||"dark"}));}
 if(store.theme)document.documentElement.dataset.theme=store.theme;
+if(store.mode==="light")document.documentElement.dataset.mode="light";
 function applyImg(p){document.querySelectorAll('[data-prof="'+p+'"]').forEach(el=>{const im=profiles[p].img;if(im){el.style.backgroundImage="url('"+im+"')";el.textContent="";}else{el.style.backgroundImage="none";el.textContent=p==="me"?"R":"F";}});}
 function refreshNames(){$("#uName").textContent=profiles[activeProf()].name;}
 applyImg("me");applyImg("fe");
 
 // ---- tema ----
-document.querySelectorAll(".tbtn").forEach(b=>{if(b.dataset.t===document.documentElement.dataset.theme){document.querySelectorAll(".tbtn").forEach(x=>x.classList.remove("on"));b.classList.add("on");}b.onclick=()=>{document.documentElement.dataset.theme=b.dataset.t;document.querySelectorAll(".tbtn").forEach(x=>x.classList.remove("on"));b.classList.add("on");save();};});
+document.querySelectorAll(".tbtn[data-t]").forEach(b=>{if(b.dataset.t===document.documentElement.dataset.theme){document.querySelectorAll(".tbtn[data-t]").forEach(x=>x.classList.remove("on"));b.classList.add("on");}b.onclick=()=>{document.documentElement.dataset.theme=b.dataset.t;document.querySelectorAll(".tbtn[data-t]").forEach(x=>x.classList.remove("on"));b.classList.add("on");save();};});
+function setModeLabel(){var b=document.getElementById("modeBtn");if(b)b.textContent=document.documentElement.dataset.mode==="light"?"☀️ Claro":"🌙 Escuro";}
+(function(){var b=document.getElementById("modeBtn");if(b)b.onclick=function(){if(document.documentElement.dataset.mode==="light")document.documentElement.removeAttribute("data-mode");else document.documentElement.dataset.mode="light";setModeLabel();save();};setModeLabel();})();
 
 // ---- navegação ----
 document.querySelectorAll(".snav").forEach(n=>n.onclick=()=>{if(n.dataset.href){location.href=n.dataset.href;return;}if(n.dataset.act){addBub(n.textContent.trim(),"me");setTimeout(()=>answer(n.dataset.act),300);$("#chat").scrollIntoView({behavior:"smooth",block:"center"});return;}if(n.dataset.toast){toast(n.dataset.toast);return;}if(n.dataset.focus){$("#msg").focus();return;}if(n.dataset.edit){openEdit();return;}document.querySelectorAll(".snav").forEach(x=>x.classList.remove("on"));n.classList.add("on");});
