@@ -20,6 +20,14 @@
 :root[data-mode="light"] .bar .col,:root[data-mode="light"] .kpi .mini i{background:#dbe0d6}
 :root[data-mode="light"] .skel{background:linear-gradient(90deg,#eef1ec 25%,#e2e6df 50%,#eef1ec 75%)}
 :root[data-mode="light"] .cbar b,:root[data-mode="light"] .chip:hover{color:#2f9e44}
+/* ocultar saldo (olhinho) */
+.hidev .kpi .v,.hidev .amt,.hidev #donutTot,.hidev .rk .amt,.hidev .leg .r b,.hidev .cbar b,.hidev .mini .big{filter:blur(9px)}
+/* bottom tab bar (só no mobile) */
+.tabbar{display:none}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.maisgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.maisgrid button{background:var(--panel2);border:1px solid var(--bd);border-radius:12px;padding:14px 12px;color:var(--ink);font-size:13px;font-weight:600;text-align:left;cursor:pointer;font-family:inherit;transition:transform .12s}
+.maisgrid button:active{transform:scale(.97)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;padding:14px 10px 40px;transition:.2s}
 .themes{display:flex;gap:8px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap;align-items:center}
@@ -64,6 +72,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .seg button{border:0;background:transparent;color:var(--mut);font-weight:700;font-size:11.5px;padding:6px 11px;border-radius:8px;cursor:pointer}
 .seg button.on{background:var(--a1);color:var(--aink)}
 .montag{font-size:11.5px;color:var(--mut);background:var(--sideb);border:1px solid var(--bd);border-radius:10px;padding:8px 11px;font-weight:600}
+.cofrepill{width:38px;height:38px;border-radius:12px;background:var(--sideb);border:1px solid var(--bd);display:grid;place-items:center;font-size:18px;cursor:pointer;flex:0 0 auto;transition:transform .12s}
+.cofrepill:active{transform:scale(.94)}
 .addb{border:0;background:var(--a1);color:var(--aink);border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 /* KPIs */
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -85,6 +95,9 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .ct .dots{color:#5a635a}
 /* mid grid */
 .mid{display:grid;grid-template-columns:1.15fr 1fr .95fr;gap:12px}
+.gauge{width:118px;height:118px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:conic-gradient(var(--gc,var(--a1)) var(--gp,0%),var(--bd) 0)}
+.gauge i{width:86px;height:86px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;flex-direction:column;font-weight:800;font-size:21px;text-align:center}
+.gauge i small{display:block;font-size:9px;color:var(--mut);font-weight:500;margin-top:1px}
 .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .heat div{aspect-ratio:1;border-radius:5px;background:#232823}
 .hlab{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px;font-size:9px;color:#6f776f;text-align:center}
@@ -192,7 +205,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   .top{gap:8px;margin-bottom:12px}
   .top .tico{width:34px;height:34px}
   .body{grid-template-columns:1fr;gap:12px}
-  .side{display:flex;flex-direction:row;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px;border-radius:14px;scrollbar-width:none}
+  /* sidebar vira barra rolável no topo */
+  .side{display:none}
   .side::-webkit-scrollbar{display:none}
   .side .logoav,.side .motto,.side .sgrp{display:none}
   .snav{flex:0 0 auto;white-space:nowrap;margin-bottom:0;padding:8px 12px;border-radius:20px;background:var(--panel2)}
@@ -208,6 +222,15 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   .dwrap{flex-wrap:wrap;justify-content:center}
   .thead,.trow{grid-template-columns:42px 1fr 84px}
   .thead span:nth-child(3),.trow .badge{display:none}
+  .content{padding-bottom:76px}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--sideb) 92%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--bd);padding:8px 8px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;align-items:center}
+  .tabbar button{background:none;border:0;color:var(--mut);font-size:9.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex:1;font-family:inherit}
+  .tabbar button .e{font-size:19px;line-height:1}
+  .tabbar button.on{color:var(--a1)}
+  .tabbar .add .e{width:52px;height:52px;border-radius:50%;background:var(--a1);color:var(--aink);display:grid;place-items:center;font-size:26px;margin-top:-26px;box-shadow:0 8px 20px -6px var(--a1)}
+  .modal{align-items:flex-end}
+  .sheet{max-width:100%!important;width:100%;border-radius:22px 22px 0 0;animation:sheetUp .28s ease;max-height:88vh}
+  .sheet::before{content:"";display:block;width:40px;height:4px;border-radius:3px;background:var(--bd);margin:-4px auto 12px}
 }
 </style></head><body>
 <div class="themes"><span class="lb">Tema:</span>
@@ -219,7 +242,9 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 <div class="scroll"><div class="dash">
   <div class="top">
     <div class="back" id="reload">‹</div>
-    <input class="search" id="search" placeholder="🔍  Buscar lançamento, categoria, caixinha…">
+    <input class="search" id="search" placeholder="🔍  Buscar lançamento…">
+    <span class="montag" id="monTag" style="flex:0 0 auto">—</span>
+    <div class="tico" id="eyeBtn" title="Ocultar/mostrar valores">👁️</div>
     <div class="tico" data-focus="1">💬</div>
     <div class="tico" data-toast="Relatório quinzenal chega no seu WhatsApp/e-mail 📊">🔔</div>
     <div class="tico me avt" data-prof="me" id="topAv">R</div>
@@ -248,15 +273,16 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
       <div class="suser" id="userSw"><div class="pf me avt on" data-p="Romero" data-prof="me">R</div><div class="pf fe avt" data-p="Fernanda" data-prof="fe">F</div><div style="font-size:11px;margin-left:2px;flex:1"><b id="uName">Romero</b><br><span style="color:var(--mut);font-size:10px">toque p/ trocar</span></div><button class="editbtn" id="editBtn">✏️</button></div>
     </aside>
     <div class="content">
-      <div class="hh"><h1 id="greet">🏠 Painel</h1><div class="rr"><div class="seg" id="cofreSeg"><button class="on" data-c="casa">🏠 Casa</button><button data-c="pessoal">👤 Pessoal</button></div><span class="montag" id="monTag">—</span><a class="addb" href="gasto.html">➕ Adicionar</a></div></div>
+      <div class="hh"><h1 id="greet">🏠 Painel</h1><div class="rr"><div class="cofrepill" id="cofrePill" title="Tocar para alternar Casa/Pessoal">🏠</div><a class="addb" href="gasto.html">➕ Adicionar</a></div></div>
 
       <div class="kpis" id="kpis"></div>
 
       <div class="mid">
-        <div class="card"><div class="ct">Gastos por dia <span class="dots">···</span></div>
-          <div class="heat" id="heat"></div>
-          <div class="hlab"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
-          <div style="margin-top:10px;font-size:11px;color:#7f877f" id="heatNote">—</div>
+        <div class="card"><div class="ct">Orçamento do mês <span class="dots">···</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0">
+            <div class="gauge" id="gauge"><i id="gaugeTxt">—</i></div>
+            <div id="gaugeSub" style="font-size:11px;color:var(--mut);text-align:center;line-height:1.5">—</div>
+          </div>
         </div>
         <div class="card"><div class="ct">Gastos por mês <span class="dots">···</span></div>
           <div class="bars" id="monthBars"></div>
@@ -288,6 +314,13 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
     </div>
   </div>
 </div></div>
+<nav class="tabbar">
+  <button class="on" data-tab="inicio"><span class="e">▦</span>Início</button>
+  <button data-tab="lanc"><span class="e">📒</span>Lançam.</button>
+  <button class="add" data-tab="add"><span class="e">➕</span></button>
+  <button data-tab="caix"><span class="e">🐷</span>Caixinhas</button>
+  <button data-tab="mais"><span class="e">☰</span>Mais</button>
+</nav>
 <div class="hint">← deslize o quadro pros lados no celular · no computador aparece tudo →</div>
 <div class="motto2">RFN Finanças · “Só o conhecimento tira o pobre da pobreza.”</div>
 
@@ -304,6 +337,21 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
     <div style="font-size:10.5px;color:var(--mut);margin-top:8px">Escolha um estilo e toque num avatar. Gere vários até achar a sua cara. 😎</div>
   </div>
   <div class="rowbtn" style="margin-top:14px"><button class="gbtn" id="cancelEdit">Cancelar</button><button class="gbtn save2" id="saveEdit">Salvar</button></div>
+</div></div>
+<div class="modal" id="maisSheet"><div class="sheet">
+  <div class="sheet-h"><span>☰ Mais opções</span><button id="maisClose">✕</button></div>
+  <div class="maisgrid">
+    <button data-go="__cofre">🔁 Trocar Casa/Pessoal</button>
+    <button data-go="Categorias">🗂️ Categorias</button>
+    <button data-go="Projeções">📈 Projeções</button>
+    <button data-go="Importar">📎 Importar fatura</button>
+    <button data-go="Meus gastos">📊 Meus gastos</button>
+    <button data-go="Saldo do mês">💰 Saldo do mês</button>
+    <button data-go="Maior gasto">🔎 Maior gasto</button>
+    <button data-go="Relatórios">📄 Relatórios</button>
+    <button data-go="__edit">✏️ Editar perfil</button>
+    <button data-go="Configurações">⚙️ Configurações</button>
+  </div>
 </div></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -323,9 +371,10 @@ let cofre="casa", DATA=null;
 // ---- estado salvo (tema + perfis) ----
 const store=JSON.parse(localStorage.getItem("rfn.dash.v1")||"{}");
 const profiles=Object.assign({me:{name:"Romero",img:null},fe:{name:"Fernanda",img:null}},store.profiles||{});
-function save(){localStorage.setItem("rfn.dash.v1",JSON.stringify({profiles,theme:document.documentElement.dataset.theme,mode:document.documentElement.dataset.mode||"dark"}));}
+function save(){localStorage.setItem("rfn.dash.v1",JSON.stringify({profiles,theme:document.documentElement.dataset.theme,mode:document.documentElement.dataset.mode||"dark",hidev:document.documentElement.classList.contains("hidev")}));}
 if(store.theme)document.documentElement.dataset.theme=store.theme;
 if(store.mode==="light")document.documentElement.dataset.mode="light";
+if(store.hidev)document.documentElement.classList.add("hidev");
 function applyImg(p){document.querySelectorAll('[data-prof="'+p+'"]').forEach(el=>{const im=profiles[p].img;if(im){el.style.backgroundImage="url('"+im+"')";el.textContent="";}else{el.style.backgroundImage="none";el.textContent=p==="me"?"R":"F";}});}
 function refreshNames(){$("#uName").textContent=profiles[activeProf()].name;}
 applyImg("me");applyImg("fe");
@@ -345,8 +394,11 @@ var _vt=document.getElementById("verTudo");if(_vt)_vt.onclick=function(){var n=[
 document.querySelectorAll("#userSw .pf").forEach(p=>p.onclick=(e)=>{e.stopPropagation();document.querySelectorAll("#userSw .pf").forEach(x=>x.classList.remove("on"));p.classList.add("on");greetNow();toast("Perfil: "+profiles[p.dataset.prof].name);});
 function activeProf(){const el=document.querySelector("#userSw .pf.on");return el?el.dataset.prof:"me";}
 function greetNow(){$("#greet").textContent=(cofre==="casa"?"🏠 ":"👤 ")+"Olá, "+profiles[activeProf()].name+"! 👋";refreshNames();}
-// cofre
-document.querySelectorAll("#cofreSeg button").forEach(b=>b.onclick=()=>{cofre=b.dataset.c;document.querySelectorAll("#cofreSeg button").forEach(x=>x.classList.remove("on"));b.classList.add("on");load();});
+// cofre (ícone que alterna Casa/Pessoal)
+function setCofrePill(){var el=$("#cofrePill");if(el)el.textContent=cofre==="casa"?"🏠":"👤";}
+function switchCofre(c){cofre=c;setCofrePill();toast("Cofre: "+(cofre==="casa"?"Casa 🏠":"Pessoal 👤"));load();}
+function toggleCofre(){switchCofre(cofre==="casa"?"pessoal":"casa");}
+(function(){var el=$("#cofrePill");if(el)el.onclick=toggleCofre;setCofrePill();})();
 $("#reload").onclick=()=>load();
 
 // ---- carregar dados reais ----
@@ -385,15 +437,14 @@ function render(){
     '<div class="kpi"><div class="ico">🐷</div><div class="l">Guardado</div><div class="v" data-count="'+guardado+'">R$ 0</div><div class="d">↗ nas caixinhas</div></div>';
   document.querySelectorAll('#kpis .v[data-count]').forEach(function(el){countUp(el,Number(el.dataset.count));});
 
-  // ---- heatmap gastos por dia (mês atual) ----
-  const y=parseInt(mo.slice(0,4),10),firstDow=new Date(y,moIdx,1).getDay(),daysIn=new Date(y,moIdx+1,0).getDate();
-  const perDay={};ents.forEach(e=>{if(e.type==="in"||(e.date||"").slice(0,7)!==mo)return;const d=parseInt((e.date||"").slice(8,10),10);perDay[d]=(perDay[d]||0)+(Number(e.amount)||0);});
-  const dMax=Math.max(1,...Object.values(perDay));
-  let cells="";for(let i=0;i<firstDow;i++)cells+='<div style="background:transparent"></div>';
-  for(let d=1;d<=daysIn;d++){const v=perDay[d]||0,lv=v<=0?0:v/dMax>.75?4:v/dMax>.5?3:v/dMax>.25?2:1;const bg=["#232823","#3a4a1f","#6f9e2b","#a7d63a","#c9f24a"][lv];cells+='<div style="background:'+bg+'" title="Dia '+d+': '+brl0(v)+'"></div>';}
-  $("#heat").innerHTML=cells;
-  const peak=Object.entries(perDay).sort((a,b)=>b[1]-a[1])[0];
-  $("#heatNote").innerHTML=peak?"Dia de maior gasto: <b style='color:var(--ink)'>"+peak[0]+"/"+mo.slice(5,7)+"</b> ("+brl0(peak[1])+").":"Sem gastos registrados no mês.";
+  // ---- gauge: orçamento do mês (gasto ÷ ganho) ----
+  var ratio=inc>0?out/inc:(out>0?1.5:0), pct=Math.round(ratio*100);
+  var gc=pct<=80?'var(--pos)':(pct<=100?'var(--warn)':'var(--neg)');
+  var g=$("#gauge");
+  g.style.setProperty('--gp',Math.min(pct,100)+'%');
+  g.style.setProperty('--gc',gc);
+  $("#gaugeTxt").innerHTML=(inc>0?pct+'%':'—')+"<small>do que ganhou</small>";
+  $("#gaugeSub").innerHTML=inc>0?('Gastou <b style="color:var(--ink)">'+brl0(out)+'</b> de '+brl0(inc)+'<br>'+(pct>100?'<b style="color:var(--neg)">estourou o orçamento</b>':pct>=90?'<b style="color:var(--warn)">no limite</b>':'<b style="color:var(--pos)">no controle</b>')):'Sem ganhos lançados este mês.';
 
   // ---- donut categorias ----
   const cols=["var(--a1)","#f97316","#fbbf24","#a78bfa","#38bdf8","#F472B6"];
@@ -418,6 +469,12 @@ function render(){
   // ---- primeira msg IA ----
   $("#firstMsg").innerHTML="Em <b>"+monNome+"</b> você gastou <b>"+brl0(out)+"</b> e recebeu <b>"+brl0(inc)+"</b>. Saldo do mês: <b style='color:"+(saldo>=0?'var(--pos)':'var(--neg)')+"'>"+brl0(saldo)+"</b>.";
   window._agg={inc,out,saldo,guardado,fix,cat,top,monNome,boxes};
+  // ---- tocar nos cards principais mostra o dado na hora ----
+  var kEls=document.querySelectorAll('#kpis .kpi');kEls.forEach(function(k){k.style.cursor='pointer';});
+  if(kEls[0])kEls[0].onclick=function(){toast('💰 Ganhos de '+monNome+': '+brl0(inc));};
+  if(kEls[1])kEls[1].onclick=function(){toast('💸 Gastos de '+monNome+': '+brl0(out)+(top[0]?' · maior: '+top[0][0]+' ('+brl0(top[0][1])+')':''));};
+  if(kEls[2])kEls[2].onclick=function(){toast('⚖️ Saldo do mês: '+brl0(saldo)+' — recebeu '+brl0(inc)+', gastou '+brl0(out));};
+  if(kEls[3])kEls[3].onclick=function(){toast('🐷 Guardado: '+brl0(guardado)+' em '+boxes.length+' caixinha'+(boxes.length===1?'':'s'));};
 }
 // ---- IA ----
 function addBub(t,who){const b=document.createElement("div");b.className="bub "+(who==="me"?"me":"aim");b.innerHTML=t;$("#chat").appendChild(b);$("#chat").scrollTop=99999;}
@@ -455,7 +512,7 @@ function showSkel(){
   var k='';for(var i=0;i<4;i++)k+='<div class="kpi"><div class="skel" style="height:64px"></div></div>';
   $("#kpis").innerHTML=k;
   $("#monthBars").innerHTML='<div class="skel" style="height:110px;width:100%"></div>';
-  $("#heat").innerHTML='<div class="skel" style="height:150px;grid-column:1/-1"></div>';
+  if($("#gaugeSub"))$("#gaugeSub").innerHTML='<div class="skel" style="height:14px;width:70%;margin:6px auto"></div>';
   $("#rank").innerHTML='<div class="skel" style="height:120px;width:100%"></div>';
   $("#leg").innerHTML='<div class="skel" style="height:110px;width:100%"></div>';
   $("#cbars").innerHTML='<div class="skel" style="height:120px;width:100%"></div>';
@@ -473,6 +530,23 @@ function initTips(){
   document.addEventListener("pointerout",function(e){if(e.target.closest&&(e.target.closest("[data-tip]")||e.target.closest("#donut")))hide();});
 }
 initTips();
+// ---- olhinho (ocultar valores) ----
+(function(){var e=document.getElementById("eyeBtn");if(!e)return;function upd(){e.textContent=document.documentElement.classList.contains("hidev")?"🙈":"👁️";}e.onclick=function(){document.documentElement.classList.toggle("hidev");upd();save();toast(document.documentElement.classList.contains("hidev")?"Valores ocultos":"Valores visíveis");};upd();})();
+// ---- barra de navegação (mobile) ----
+(function(){function byTxt(t){return [].slice.call(document.querySelectorAll(".snav")).filter(function(x){return x.textContent.indexOf(t)>=0;})[0];}
+  document.querySelectorAll(".tabbar button").forEach(function(b){b.onclick=function(){var t=b.dataset.tab;
+    if(t!=="add"&&t!=="mais"){document.querySelectorAll(".tabbar button").forEach(function(x){x.classList.remove("on");});b.classList.add("on");}
+    if(t==="inicio"){window.scrollTo({top:0,behavior:"smooth"});}
+    else if(t==="add"){location.href="gasto.html";}
+    else if(t==="lanc"){var n=byTxt("Lançamentos");if(n)n.click();}
+    else if(t==="caix"){var n=byTxt("Caixinhas");if(n)n.click();}
+    else if(t==="mais"){document.getElementById("maisSheet").classList.add("show");}
+  };});
+  var ms=document.getElementById("maisSheet");
+  if(ms){document.getElementById("maisClose").onclick=function(){ms.classList.remove("show");};
+    ms.addEventListener("click",function(ev){if(ev.target===ms)ms.classList.remove("show");});
+    ms.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){var g=b.dataset.go;ms.classList.remove("show");if(g==="__edit"){openEdit();return;}if(g==="__cofre"){toggleCofre();return;}var n=byTxt(g);if(n)n.click();};});}
+})();
 showSkel();
 load();
 
