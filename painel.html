@@ -122,6 +122,14 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .cbar{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end}
 .cbar .col{width:60%;max-width:34px;border-radius:8px;background:var(--a1);min-height:4px}
 .cbar small{font-size:9.5px;color:#7f877f;text-align:center;line-height:1.3}
+/* caixinhas detalhadas (anéis) */
+.cxrings{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:14px;text-align:center}
+.cxring{cursor:pointer}
+.cxring .rg{width:84px;height:84px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;background:conic-gradient(var(--a1) var(--p,0%),var(--bd) 0);transition:transform .12s}
+.cxring:active .rg{transform:scale(.95)}
+.cxring .rg i{width:62px;height:62px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;font-weight:800;font-size:15px}
+.cxring .nm{font-size:11.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cxring .vl{font-size:10px;color:var(--mut);font-family:ui-monospace,monospace}
 /* IA / chat */
 .aicard{position:relative;overflow:hidden}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
@@ -301,10 +309,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
         </div>
       </div>
 
-      <div class="card aicard"><div class="ct">🤖 Assistente RFN <span class="dots">pergunte em português</span></div>
-        <div class="chips"><div class="chip" data-act="gastos">📊 Meus gastos</div><div class="chip" data-act="caixinhas">🐷 Caixinhas</div><div class="chip" data-act="saldo">💰 Saldo</div><div class="chip" data-act="maior">🔎 Maior gasto</div></div>
-        <div class="chat" id="chat"><div class="bub aim" id="firstMsg">Carregando seus dados…</div></div>
-        <div class="inbox"><input id="msg" placeholder="Pergunte algo…"><button class="send" id="sendBtn">➤</button></div>
+      <div class="card"><div class="ct">🐷 Minhas caixinhas <span class="dots" id="cxTot">—</span></div>
+        <div class="cxrings" id="cxDetail"></div>
       </div>
 
       <div class="card"><div class="ct">Últimos lançamentos <em id="verTudo" style="cursor:pointer">ver tudo</em></div>
@@ -338,9 +344,16 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   </div>
   <div class="rowbtn" style="margin-top:14px"><button class="gbtn" id="cancelEdit">Cancelar</button><button class="gbtn save2" id="saveEdit">Salvar</button></div>
 </div></div>
+<div class="modal" id="iaSheet"><div class="sheet">
+  <div class="sheet-h"><span>🤖 Assistente RFN</span><button id="iaClose">✕</button></div>
+  <div class="chips"><div class="chip" data-act="gastos">📊 Meus gastos</div><div class="chip" data-act="caixinhas">🐷 Caixinhas</div><div class="chip" data-act="saldo">💰 Saldo</div><div class="chip" data-act="maior">🔎 Maior gasto</div></div>
+  <div class="chat" id="chat"><div class="bub aim" id="firstMsg">Carregando seus dados…</div></div>
+  <div class="inbox"><input id="msg" placeholder="Pergunte algo…"><button class="send" id="sendBtn">➤</button></div>
+</div></div>
 <div class="modal" id="maisSheet"><div class="sheet">
   <div class="sheet-h"><span>☰ Mais opções</span><button id="maisClose">✕</button></div>
   <div class="maisgrid">
+    <button data-go="__ia">🤖 Assistente RFN</button>
     <button data-go="__cofre">🔁 Trocar Casa/Pessoal</button>
     <button data-go="Categorias">🗂️ Categorias</button>
     <button data-go="Projeções">📈 Projeções</button>
@@ -385,8 +398,10 @@ function setModeLabel(){var b=document.getElementById("modeBtn");if(b)b.textCont
 (function(){var b=document.getElementById("modeBtn");if(b)b.onclick=function(){if(document.documentElement.dataset.mode==="light")document.documentElement.removeAttribute("data-mode");else document.documentElement.dataset.mode="light";setModeLabel();save();};setModeLabel();})();
 
 // ---- navegação ----
-document.querySelectorAll(".snav").forEach(n=>n.onclick=()=>{if(n.dataset.href){location.href=n.dataset.href;return;}if(n.dataset.act){addBub(n.textContent.trim(),"me");setTimeout(()=>answer(n.dataset.act),300);$("#chat").scrollIntoView({behavior:"smooth",block:"center"});return;}if(n.dataset.toast){toast(n.dataset.toast);return;}if(n.dataset.focus){$("#msg").focus();return;}if(n.dataset.edit){openEdit();return;}document.querySelectorAll(".snav").forEach(x=>x.classList.remove("on"));n.classList.add("on");});
-document.querySelectorAll("[data-focus]").forEach(el=>el.onclick=()=>$("#msg").focus());
+function openIA(){var s=document.getElementById("iaSheet");if(s)s.classList.add("show");setTimeout(function(){var m=$("#msg");if(m)m.focus();},60);}
+(function(){var c=document.getElementById("iaClose"),s=document.getElementById("iaSheet");if(c)c.onclick=function(){s.classList.remove("show");};if(s)s.addEventListener("click",function(ev){if(ev.target===s)s.classList.remove("show");});})();
+document.querySelectorAll(".snav").forEach(n=>n.onclick=()=>{if(n.dataset.href){location.href=n.dataset.href;return;}if(n.dataset.act){openIA();addBub(n.textContent.trim(),"me");setTimeout(()=>answer(n.dataset.act),300);return;}if(n.dataset.toast){toast(n.dataset.toast);return;}if(n.dataset.focus){openIA();return;}if(n.dataset.edit){openEdit();return;}document.querySelectorAll(".snav").forEach(x=>x.classList.remove("on"));n.classList.add("on");});
+document.querySelectorAll("[data-focus]").forEach(el=>el.onclick=()=>openIA());
 document.querySelectorAll("[data-toast]").forEach(el=>el.dataset.act||(el.onclick=()=>toast(el.dataset.toast)));
 document.querySelectorAll("[data-href]").forEach(el=>el.classList.contains("snav")||(el.onclick=()=>location.href=el.dataset.href));
 var _vt=document.getElementById("verTudo");if(_vt)_vt.onclick=function(){var n=[].slice.call(document.querySelectorAll(".snav")).filter(function(x){return x.textContent.indexOf("Lançamentos")>=0;})[0];if(n)n.click();};
@@ -462,6 +477,12 @@ function render(){
   // ---- caixinhas barras ----
   $("#cbars").innerHTML=boxes.length?boxes.slice(0,4).map(b=>{const p=b.target?Math.min(Math.round(b.saved/b.target*100),100):0;return '<div class="cbar" data-tip="'+(b.emoji||"🐷")+" "+b.name+': '+brl0(b.saved)+(b.target?' de '+brl0(b.target):'')+' ('+p+'%)"><div class="col" style="height:'+Math.max(2,p)+'%"></div><small>'+(b.emoji||"🐷")+" "+b.name+'<br><b style="color:var(--a1)">'+p+'%</b></small></div>';}).join(''):'<div style="color:var(--mut);font-size:12px;align-self:center">Nenhuma caixinha.</div>';
 
+  // ---- caixinhas detalhadas (anéis) — no lugar do assistente ----
+  var totMeta=boxes.reduce(function(s,b){return s+(Number(b.target)||0);},0);
+  $("#cxTot").textContent="R$ "+Math.round(guardado).toLocaleString("pt-BR")+(totMeta?" / "+Math.round(totMeta).toLocaleString("pt-BR"):"");
+  $("#cxDetail").innerHTML=boxes.length?boxes.map(function(b){var p=b.target?Math.min(Math.round(b.saved/b.target*100),100):0;var falta=b.target?Math.max(b.target-b.saved,0):0;return '<div class="cxring" data-cxtip="'+(b.emoji||"🐷")+" "+b.name+': '+brl0(b.saved)+(b.target?" de "+brl0(b.target)+" · faltam "+brl0(falta):"")+' ('+p+'%)"><div class="rg" style="--p:'+Math.max(p,1)+'%"><i>'+p+'%</i></div><div class="nm">'+(b.emoji||"🐷")+" "+b.name+'</div><div class="vl">'+brl0(b.saved)+'</div></div>';}).join(''):'<div style="color:var(--mut);font-size:12px;grid-column:1/-1;text-align:center;padding:10px">Nenhuma caixinha ainda. Crie no ☰ Mais → Caixinhas.</div>';
+  document.querySelectorAll('#cxDetail .cxring').forEach(function(el){el.onclick=function(){toast(el.getAttribute('data-cxtip'));};});
+
   // ---- últimos lançamentos ----
   const rec=ents.slice(-6).reverse();
   $("#txlist").innerHTML=rec.length?rec.map(e=>{const sig=e.type==="in"?"+":"−",col=e.type==="in"?"var(--pos)":"var(--neg)";const d=(e.date||"").slice(8,10)+"/"+(e.date||"").slice(5,7);return '<div class="trow"><span>'+d+'</span><span class="m"><span class="ic">'+(CATEMO[e.cat]||"💠")+'</span><span>'+(e.desc||e.cat||"—")+'</span></span><span class="badge">'+(e.cat||"—")+'</span><span class="amt" style="color:'+col+'">'+sig+brl0(e.amount)+'</span></div>';}).join(''):'<div style="color:var(--mut);padding:12px;font-size:12px">Nenhum lançamento.</div>';
@@ -475,6 +496,11 @@ function render(){
   if(kEls[1])kEls[1].onclick=function(){toast('💸 Gastos de '+monNome+': '+brl0(out)+(top[0]?' · maior: '+top[0][0]+' ('+brl0(top[0][1])+')':''));};
   if(kEls[2])kEls[2].onclick=function(){toast('⚖️ Saldo do mês: '+brl0(saldo)+' — recebeu '+brl0(inc)+', gastou '+brl0(out));};
   if(kEls[3])kEls[3].onclick=function(){toast('🐷 Guardado: '+brl0(guardado)+' em '+boxes.length+' caixinha'+(boxes.length===1?'':'s'));};
+  // ---- toque nos cards do meio → resumo rápido ----
+  var cMid=document.querySelectorAll('.mid .card');cMid.forEach(function(c){c.style.cursor='pointer';});
+  if(cMid[0])cMid[0].onclick=function(){toast('🎯 Orçamento: gastou '+brl0(out)+' de '+brl0(inc)+' · fixos '+brl0(fix));};
+  if(cMid[1])cMid[1].onclick=function(){var ks=Object.keys(byMonth).sort();var prevK=ks.filter(function(k){return k<mo;}).pop();var prev=prevK?byMonth[prevK]:0;var cur=byMonth[mo]||out;var diff=prev?Math.round((cur-prev)/prev*100):0;toast('📈 '+monNome+': '+brl0(cur)+(prev?' · '+(diff>=0?'▲ +'+diff:'▼ '+diff)+'% vs mês passado':''));};
+  if(cMid[2])cMid[2].onclick=function(){toast('🔎 Maiores: '+(top.slice(0,3).map(function(c){return c[0]+' '+brl0(c[1]);}).join(' · ')||'sem gastos'));};
 }
 // ---- IA ----
 function addBub(t,who){const b=document.createElement("div");b.className="bub "+(who==="me"?"me":"aim");b.innerHTML=t;$("#chat").appendChild(b);$("#chat").scrollTop=99999;}
@@ -545,7 +571,7 @@ initTips();
   var ms=document.getElementById("maisSheet");
   if(ms){document.getElementById("maisClose").onclick=function(){ms.classList.remove("show");};
     ms.addEventListener("click",function(ev){if(ev.target===ms)ms.classList.remove("show");});
-    ms.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){var g=b.dataset.go;ms.classList.remove("show");if(g==="__edit"){openEdit();return;}if(g==="__cofre"){toggleCofre();return;}var n=byTxt(g);if(n)n.click();};});}
+    ms.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){var g=b.dataset.go;ms.classList.remove("show");if(g==="__edit"){openEdit();return;}if(g==="__cofre"){toggleCofre();return;}if(g==="__ia"){openIA();return;}var n=byTxt(g);if(n)n.click();};});}
 })();
 if("serviceWorker" in navigator){try{navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}catch(e){}}
 showSkel();
