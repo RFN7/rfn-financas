@@ -255,11 +255,11 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
       <div class="motto">“Só o conhecimento tira o pobre da pobreza.”</div>
       <div class="sgrp">Geral</div>
       <div class="snav on"><span class="e">▦</span>Visão geral</div>
-      <div class="snav" data-href="index.html"><span class="e">📒</span>Lançamentos</div>
-      <div class="snav" data-href="index.html"><span class="e">🗂️</span>Categorias</div>
-      <div class="snav" data-href="index.html"><span class="e">📈</span>Projeções</div>
+      <div class="snav"><span class="e">📒</span>Lançamentos</div>
+      <div class="snav"><span class="e">🗂️</span>Categorias</div>
+      <div class="snav"><span class="e">📈</span>Projeções</div>
       <div class="snav" data-href="gasto.html"><span class="e">➕</span>Adicionar gasto</div>
-      <div class="snav" data-href="index.html"><span class="e">🐷</span>Caixinhas</div>
+      <div class="snav"><span class="e">🐷</span>Caixinhas</div>
       <div class="sgrp">Perguntar à IA</div>
       <div class="snav" data-act="gastos"><span class="e">📊</span>Meus gastos</div>
       <div class="snav" data-act="caixinhas"><span class="e">🐷</span>Caixinhas</div>
@@ -547,6 +547,7 @@ initTips();
     ms.addEventListener("click",function(ev){if(ev.target===ms)ms.classList.remove("show");});
     ms.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){var g=b.dataset.go;ms.classList.remove("show");if(g==="__edit"){openEdit();return;}if(g==="__cofre"){toggleCofre();return;}var n=byTxt(g);if(n)n.click();};});}
 })();
+if("serviceWorker" in navigator){try{navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}catch(e){}}
 showSkel();
 load();
 
