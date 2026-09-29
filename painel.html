@@ -52,6 +52,37 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .logoav .pic.f{margin-left:-10px}
 .logoav .wm{font-weight:800;font-size:14px}.logoav .wm span{color:var(--a1)}
 .motto{margin:0 6px 10px;font-size:9.5px;font-style:italic;color:var(--mut);opacity:.75;line-height:1.4}
+/* bola de marca + avatar interativo */
+.brand{display:flex;align-items:center;gap:10px;margin:2px 2px 6px;cursor:pointer;padding:6px;border-radius:14px;transition:background .15s}
+.brand:hover{background:rgba(255,255,255,.04)}
+.brand:active{transform:scale(.98)}
+.ballwrap{position:relative;width:44px;height:44px;flex:0 0 auto}
+.ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--gc,var(--a1)) var(--gp,0%),var(--bd) 0);padding:2.5px;transition:--gp .5s ease}
+.ball{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--a1),var(--a2));background-size:cover;background-position:center;display:grid;place-items:center;font-weight:800;font-size:15px;color:var(--aink)}
+.bbadge{position:absolute;right:-4px;bottom:-4px;background:var(--sideb);border:1.5px solid var(--a1);color:var(--a1);font-size:7.5px;font-weight:800;border-radius:20px;padding:2px 5px;letter-spacing:.3px}
+.bdot{position:absolute;right:-1px;top:0;width:11px;height:11px;border-radius:50%;background:var(--pos);border:2px solid var(--sideb)}
+.brand .bwm{font-weight:800;font-size:14px;line-height:1.15}.brand .bwm span{color:var(--a1)}
+.brand .rl{display:block;font-size:9px;color:var(--mut);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .chev{margin-left:auto;color:var(--mut);font-size:11px;transition:transform .2s}
+.brand.open .chev{transform:rotate(180deg)}
+.brand{flex:0 0 auto}
+.pop{max-height:0;overflow:hidden;transition:max-height .28s ease;margin:0 2px;flex:0 0 auto}
+.pop.open{max-height:520px}
+.pcard{background:var(--panel2);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:4px}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.pbig{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a1),var(--a2));background-size:cover;background-position:center;display:grid;place-items:center;font-weight:800;font-size:17px;color:var(--aink);flex:0 0 auto}
+.pname{font-weight:800;font-size:13.5px}
+.pmeta{font-size:10px;color:var(--mut)}
+.pact{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pact button{display:flex;align-items:center;gap:6px;background:var(--sideb);border:1px solid var(--bd);border-radius:11px;padding:9px 8px;color:var(--ink);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;transition:transform .1s}
+.pact button:active{transform:scale(.96)}
+.pact button.full{grid-column:1/3;background:var(--a1);color:var(--aink);border:0;font-weight:800;justify-content:center}
+.pswitch{display:flex;gap:6px;margin:10px 0 2px}
+.pswitch .p{flex:1;display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:10px;border:1px solid var(--bd);background:var(--sideb);cursor:pointer;font-size:10.5px;font-weight:700;color:var(--ink)}
+.pswitch .p.on{outline:2px solid var(--a1);outline-offset:-1px}
+.pswitch .pav{width:22px;height:22px;border-radius:50%;background-size:cover;background-position:center;display:grid;place-items:center;font-size:10px;font-weight:800;color:var(--aink);flex:0 0 auto}
+.pswitch .pav.me{background:linear-gradient(135deg,var(--a1),var(--a2))}
+.pswitch .pav.fe{background:linear-gradient(135deg,#EC4899,#a21caf);color:#fff}
 .sgrp{color:var(--mut);opacity:.7;font-size:9px;letter-spacing:1.1px;text-transform:uppercase;margin:12px 6px 6px}
 .snav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--mut);font-weight:600;margin-bottom:2px;cursor:pointer;transition:.15s}
 .snav:hover{background:rgba(255,255,255,.04);color:var(--ink)}
@@ -304,7 +335,34 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   </div>
   <div class="body">
     <aside class="side">
-      <div class="logoav"><div class="pic avt" data-prof="me" style="background:linear-gradient(135deg,var(--a1),var(--a2))">R</div><div class="pic avt f" data-prof="fe" style="background:linear-gradient(135deg,#EC4899,#a21caf);color:#fff">F</div><div class="wm">RF<span>N</span></div></div>
+      <div class="brand" id="brandBtn">
+        <div class="ballwrap">
+          <div class="ring" id="brandRing"><div class="ball" id="brandBall">R</div></div>
+          <div class="bbadge">RFN</div>
+          <div class="bdot" id="brandDot" title="Cofre ativo"></div>
+        </div>
+        <div style="min-width:0"><span class="bwm">RF<span>N</span> Finanças</span><span class="rl" id="brandRole">Romero · Casa 🏠</span></div>
+        <div class="chev">▾</div>
+      </div>
+      <div class="pop" id="brandPop">
+        <div class="pcard">
+          <div class="phead">
+            <div class="pbig" id="brandBig">R</div>
+            <div style="min-width:0"><div class="pname" id="brandName">Romero</div><div class="pmeta" id="brandGoal">Meta do mês</div></div>
+          </div>
+          <div class="pact">
+            <button data-pa="perfil">👤 Ver perfil</button>
+            <button data-pa="nome">✏️ Editar nome</button>
+            <button data-pa="foto">📸 Colocar foto</button>
+            <button data-pa="avatar">🧑‍🎨 Trocar avatar</button>
+            <button class="full" data-pa="pessoal">📱 Abrir app pessoal</button>
+          </div>
+          <div class="pswitch" id="brandSwitch">
+            <div class="p on" data-prof2="me"><div class="pav me avt" data-prof="me">R</div>Romero</div>
+            <div class="p" data-prof2="fe"><div class="pav fe avt" data-prof="fe">F</div>Fernanda</div>
+          </div>
+        </div>
+      </div>
       <div class="motto">“Só o conhecimento tira o pobre da pobreza.”</div>
       <div class="sgrp">Geral</div>
       <div class="snav on"><span class="e">▦</span>Visão geral</div>
@@ -481,7 +539,7 @@ var _vt=document.getElementById("verTudo");if(_vt)_vt.onclick=function(){var n=[
 // perfis
 document.querySelectorAll("#userSw .pf").forEach(p=>p.onclick=(e)=>{e.stopPropagation();document.querySelectorAll("#userSw .pf").forEach(x=>x.classList.remove("on"));p.classList.add("on");greetNow();toast("Perfil: "+profiles[p.dataset.prof].name);});
 function activeProf(){const el=document.querySelector("#userSw .pf.on");return el?el.dataset.prof:"me";}
-function greetNow(){$("#greet").textContent=(cofre==="casa"?"🏠 ":"👤 ")+"Olá, "+profiles[activeProf()].name+"! 👋";refreshNames();}
+function greetNow(){$("#greet").textContent=(cofre==="casa"?"🏠 ":"👤 ")+"Olá, "+profiles[activeProf()].name+"! 👋";refreshNames();if(window.renderBrand)renderBrand();}
 // cofre (ícone que alterna Casa/Pessoal)
 function setCofrePill(){var el=$("#cofrePill");if(el)el.textContent=cofre==="casa"?"🏠":"👤";}
 function switchCofre(c){cofre=c;setCofrePill();toast("Cofre: "+(cofre==="casa"?"Casa 🏠":"Pessoal 👤"));load();}
@@ -583,7 +641,7 @@ function render(){
 
   // ---- primeira msg IA ----
   $("#firstMsg").innerHTML="Em <b>"+monNome+"</b> você gastou <b>"+brl0(out)+"</b> e recebeu <b>"+brl0(inc)+"</b>. Saldo do mês: <b style='color:"+(saldo>=0?'var(--pos)':'var(--neg)')+"'>"+brl0(saldo)+"</b>.";
-  window._agg={inc,out,saldo,guardado,fix,cat,top,monNome,boxes};
+  window._agg={inc,out,saldo,guardado,fix,cat,top,monNome,boxes};if(window.renderBrand)renderBrand();
   // ---- tocar nos cards principais mostra o dado na hora ----
   var kEls=document.querySelectorAll('#kpis .cb');kEls.forEach(function(k){k.style.cursor='pointer';});
   if(kEls[0])kEls[0].onclick=function(){toast('💰 Ganhos de '+monNome+': '+brl0(inc));};
@@ -627,6 +685,40 @@ $("#randBtn").onclick=()=>genGrid();
 document.querySelectorAll(".tab2").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab2").forEach(x=>x.classList.remove("on"));t.classList.add("on");document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));$("#pane-"+t.dataset.pane).classList.add("on");});
 $("#fFile").onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const S=256,cv=document.createElement("canvas");cv.width=S;cv.height=S;const ctx=cv.getContext("2d");const m=Math.min(img.width,img.height),sx=(img.width-m)/2,sy=(img.height-m)/2;ctx.drawImage(img,sx,sy,m,m,0,0,S,S);try{pendingImg=cv.toDataURL("image/jpeg",0.85);}catch(e){pendingImg=rd.result;}setBig();};img.onerror=()=>{pendingImg=rd.result;setBig();};img.src=rd.result;};rd.readAsDataURL(f);};
 $("#saveEdit").onclick=()=>{profiles[editing].name=$("#fName").value.trim()||profiles[editing].name;profiles[editing].img=pendingImg;applyImg(editing);save();greetNow();$("#editModal").classList.remove("show");toast("✅ Perfil salvo!");};
+
+// ---- bola de marca + avatar interativo ----
+function renderBrand(){
+  var p=activeProf(),pr=profiles[p],me=p==="me";
+  function paint(el){if(!el)return;if(pr.img){el.style.backgroundImage="url('"+pr.img+"')";el.textContent="";el.style.background="";}else{el.style.backgroundImage="none";el.textContent=me?"R":"F";el.style.background="linear-gradient(135deg,"+(me?"var(--a1),var(--a2)":"#EC4899,#a21caf")+")";el.style.color=me?"var(--aink)":"#fff";}}
+  paint($("#brandBall"));paint($("#brandBig"));
+  var nm=pr.name;
+  if($("#brandName"))$("#brandName").textContent=nm;
+  if($("#brandRole"))$("#brandRole").textContent=nm+" · "+(cofre==="casa"?"Casa 🏠":"Pessoal 👤");
+  var ring=$("#brandRing"),g=window._agg;
+  if(ring&&g&&g.inc>0){var pct=Math.min(Math.round(g.out/g.inc*100),100);var gc=pct<=80?'var(--pos)':(pct<=100?'var(--warn)':'var(--neg)');ring.style.setProperty('--gp',pct+'%');ring.style.setProperty('--gc',gc);if($("#brandGoal"))$("#brandGoal").innerHTML='Gasto do mês: <b style="color:var(--ink)">'+pct+'%</b> da renda';}
+  else if(ring){ring.style.setProperty('--gp','0%');if($("#brandGoal"))$("#brandGoal").textContent='Meta do mês';}
+  document.querySelectorAll('#brandSwitch .p').forEach(function(x){x.classList.toggle('on',x.dataset.prof2===p);});
+}
+function openEditPane(pane){openEdit();var t=document.querySelector('#editModal .tab2[data-pane="'+pane+'"]');if(t)t.click();}
+(function(){
+  var btn=$("#brandBtn"),pop=$("#brandPop");
+  if(btn)btn.onclick=function(){var o=pop.classList.toggle('open');btn.classList.toggle('open',o);};
+  document.querySelectorAll('#brandPop .pact button').forEach(function(b){b.onclick=function(e){e.stopPropagation();
+    var a=b.dataset.pa;pop.classList.remove('open');btn.classList.remove('open');
+    if(a==='perfil'){openEdit();}
+    else if(a==='nome'){openEdit();setTimeout(function(){var f=$("#fName");if(f){f.focus();f.select&&f.select();}},80);}
+    else if(a==='foto'){openEditPane('foto');}
+    else if(a==='avatar'){openEditPane('avatar');}
+    else if(a==='pessoal'){location.href='pessoal.html';}
+  };});
+  document.querySelectorAll('#brandSwitch .p').forEach(function(p){p.onclick=function(e){e.stopPropagation();
+    var prof=p.dataset.prof2;
+    document.querySelectorAll('#userSw .pf').forEach(function(x){x.classList.toggle('on',x.dataset.prof===prof);});
+    greetNow();toast("Perfil: "+profiles[prof].name);
+  };});
+  renderBrand();
+})();
+
 
 // ---- skeletons de carregamento ----
 function showSkel(){
