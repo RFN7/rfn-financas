@@ -30,8 +30,14 @@
 .maisgrid button:active{transform:scale(.97)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;padding:14px 10px 40px;transition:.2s}
-.themes{display:flex;gap:8px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap;align-items:center}
-.themes .lb{font-size:11px;color:var(--mut);margin-right:2px}
+.themes{position:relative;display:flex;align-items:center;justify-content:center;min-height:46px;margin:2px 0 10px;padding:0 6px}
+.themes .lb{display:none}
+.logobar{display:flex;flex-direction:column;align-items:center;gap:1px}
+.logobar .row{display:flex;align-items:center;gap:8px}
+.logobar .wm{font-weight:900;font-size:18px;letter-spacing:-.4px;color:var(--ink);line-height:1.05}
+.logobar .wm span{color:var(--a1)}
+.logobar .tl{font-size:8px;letter-spacing:2.4px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.themes #modeBtn{position:absolute;right:6px;top:50%;transform:translateY(-50%);margin:0;padding:6px 9px;font-size:11px}
 .tbtn{border:1px solid var(--bd);background:var(--panel);color:var(--ink);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
 .tbtn .sw{width:12px;height:12px;border-radius:4px}
 .tbtn.on{outline:2px solid var(--a1)}
@@ -315,11 +321,21 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   .content{padding-bottom:20px}
 }
 </style></head><body>
-<div class="themes"><span class="lb">Tema:</span>
-  <button class="tbtn on" data-t="lime"><span class="sw" style="background:#c9f24a"></span>Limão</button>
-  <button class="tbtn" data-t="blue"><span class="sw" style="background:#3B82F6"></span>Azul</button>
-  <button class="tbtn" data-t="red"><span class="sw" style="background:#FF3B57"></span>Vermelho</button>
-  <button class="tbtn" id="modeBtn" style="margin-left:6px">🌙 Escuro</button>
+<div class="themes">
+  <div class="logobar">
+    <div class="row">
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="4" y="18" width="5" height="10" rx="1.5" fill="var(--a1)" opacity=".45"/>
+        <rect x="13" y="12" width="5" height="16" rx="1.5" fill="var(--a1)" opacity=".7"/>
+        <rect x="22" y="6" width="5" height="22" rx="1.5" fill="var(--a1)"/>
+        <path d="M4 15 L13 10 L18 12 L28 4" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="28" cy="4" r="2.6" fill="var(--ink)"/>
+      </svg>
+      <div class="wm">RF<span>N</span> Finanças</div>
+    </div>
+    <div class="tl">Estruturando Sonhos</div>
+  </div>
+  <button class="tbtn" id="modeBtn">🌙 Escuro</button>
 </div>
 <div class="scroll"><div class="dash">
   <div class="drawerbk" id="drawerBk"></div>
@@ -474,10 +490,10 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
   <div style="display:flex;gap:8px">
     <div style="width:90px"><div class="field">Emoji</div><input class="inp" id="bfEmoji" value="🧾" maxlength="4"></div>
     <div style="flex:1"><div class="field">Tipo</div>
-      <div class="tabs2" style="margin:0"><div class="tab2 on" data-bt="fixa">🔒 Fixa</div><div class="tab2" data-bt="flex">🔀 Flexível</div></div>
+      <div class="tabs2" style="margin:0"><div class="tab2 on" data-bt="fixa">🔒 Fixa</div><div class="tab2" data-bt="flex">🔀 Variável</div></div>
     </div>
   </div>
-  <div style="font-size:10.5px;color:var(--mut);margin-top:8px">Fixa = repete todo mês sozinha. Flexível = você ajusta quando quiser.</div>
+  <div style="font-size:10.5px;color:var(--mut);margin-top:8px">Fixa = repete todo mês sozinha. Variável = valor muda, você ajusta quando quiser.</div>
   <div class="rowbtn" style="margin-top:14px"><button class="gbtn" id="bfDel" style="display:none;color:var(--neg)">🗑 Excluir</button><button class="gbtn save2" id="bfSave">Salvar</button></div>
 </div></div>
 <div class="modal" id="maisSheet"><div class="sheet">
@@ -516,7 +532,7 @@ let cofre="casa", DATA=null;
 const store=JSON.parse(localStorage.getItem("rfn.dash.v1")||"{}");
 const profiles=Object.assign({me:{name:"Romero",img:null},fe:{name:"Fernanda",img:null}},store.profiles||{});
 function save(){localStorage.setItem("rfn.dash.v1",JSON.stringify({profiles,theme:document.documentElement.dataset.theme,mode:document.documentElement.dataset.mode||"dark",hidev:document.documentElement.classList.contains("hidev")}));}
-if(store.theme)document.documentElement.dataset.theme=store.theme;
+document.documentElement.dataset.theme="lime";
 if(store.mode==="light")document.documentElement.dataset.mode="light";
 if(store.hidev)document.documentElement.classList.add("hidev");
 function applyImg(p){document.querySelectorAll('[data-prof="'+p+'"]').forEach(el=>{const im=profiles[p].img;if(im){el.style.backgroundImage="url('"+im+"')";el.textContent="";}else{el.style.backgroundImage="none";el.textContent=p==="me"?"R":"F";}});}
@@ -785,7 +801,7 @@ function renderContas(){
   function row(b){var isP=paid.indexOf(b.id)>=0,over=!isP&&b.dueDay&&curDay>b.dueDay,cls=isP?"pago":(over?"atr":"pend"),lbl=isP?"✓ Pago":(over?"! Atrasada":"○ Pendente");var due=b.dueDay?('vence dia '+String(b.dueDay).padStart(2,"0")):"";if(over)due='<span style="color:var(--neg)">venceu dia '+String(b.dueDay).padStart(2,"0")+' · atrasada</span>';return '<div class="billrow" data-id="'+b.id+'"><div class="em">'+(b.emoji||"🧾")+'</div><div class="mid" data-edit="'+b.id+'"><b>'+b.name+'</b><small>'+due+'</small></div><div class="amt">'+brl0(b.amount)+'</div><button class="pg '+cls+'" data-bill="'+b.id+'">'+lbl+'</button></div>';}
   var fx=bills.filter(function(b){return b.fixed;}),fl=bills.filter(function(b){return !b.fixed;}),html='';
   if(fx.length)html+='<div class="billsec">🔒 Fixas (todo mês)</div>'+fx.map(row).join('');
-  if(fl.length)html+='<div class="billsec">🔀 Flexíveis</div>'+fl.map(row).join('');
+  if(fl.length)html+='<div class="billsec">🔀 Variáveis</div>'+fl.map(row).join('');
   var bl=document.getElementById("billList");bl.innerHTML=html;
   bl.querySelectorAll("[data-bill]").forEach(function(btn){btn.onclick=function(){toggleBill(btn.getAttribute("data-bill"));};});
   bl.querySelectorAll("[data-edit]").forEach(function(m){m.style.cursor="pointer";m.onclick=function(){openBillForm(m.getAttribute("data-edit"));};});
@@ -823,7 +839,7 @@ function openContas(){renderContas();document.getElementById("contasSheet").clas
     var h='<div style="font-size:11.5px;color:var(--mut);margin-bottom:8px">Adicionar conta fixa</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="field">Nome</div><input class="inp" id="csfName" placeholder="Ex: Luz"></div><div><div class="field">Valor</div><input class="inp" id="csfVal" inputmode="decimal" placeholder="R$"></div></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="field">Vence dia</div><input class="inp" id="csfDay" inputmode="numeric" value="10"></div><div><div class="field">Emoji</div><input class="inp" id="csfEmoji" value="🧾"></div></div>'+
-    '<div class="field">Tipo</div><div class="tabs2" style="margin:0"><div class="tab2 on" data-t="fixa">🔒 Fixa</div><div class="tab2" data-t="flex">🔀 Flexível</div></div>'+
+    '<div class="field">Tipo</div><div class="tabs2" style="margin:0"><div class="tab2 on" data-t="fixa">🔒 Fixa</div><div class="tab2" data-t="flex">🔀 Variável</div></div>'+
     '<button class="gbtn save2" id="csfAdd" style="margin-top:12px">➕ Adicionar conta</button>'+
     '<div style="font-size:11.5px;color:var(--mut);margin:16px 0 4px">Contas do mês</div><div id="csfList"></div>';
     document.getElementById('csFix').innerHTML=h;
