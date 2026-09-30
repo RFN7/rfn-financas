@@ -644,10 +644,10 @@ function render(){
   window._agg={inc,out,saldo,guardado,fix,cat,top,monNome,boxes};if(window.renderBrand)renderBrand();
   // ---- tocar nos cards principais mostra o dado na hora ----
   var kEls=document.querySelectorAll('#kpis .cb');kEls.forEach(function(k){k.style.cursor='pointer';});
-  if(kEls[0])kEls[0].onclick=function(){toast('💰 Ganhos de '+monNome+': '+brl0(inc));};
-  if(kEls[1])kEls[1].onclick=function(){toast('💸 Gastos de '+monNome+': '+brl0(out)+(top[0]?' · maior: '+top[0][0]+' ('+brl0(top[0][1])+')':''));};
-  if(kEls[2])kEls[2].onclick=function(){toast('⚖️ Saldo do mês: '+brl0(saldo)+' — recebeu '+brl0(inc)+', gastou '+brl0(out));};
-  if(kEls[3])kEls[3].onclick=function(){toast('🐷 Guardado: '+brl0(guardado)+' em '+boxes.length+' caixinha'+(boxes.length===1?'':'s'));};
+  if(kEls[0])kEls[0].onclick=function(){openCardSheet('ganhos');};
+  if(kEls[1])kEls[1].onclick=function(){openCardSheet('gastos');};
+  if(kEls[2])kEls[2].onclick=function(){openCardSheet('saldo');};
+  if(kEls[3])kEls[3].onclick=function(){openCardSheet('guardado');};
   // ---- toque nos cards do meio → resumo rápido ----
   var cMid=document.querySelectorAll('.mid .card');cMid.forEach(function(c){c.style.cursor='pointer';});
   if(cMid[0])cMid[0].onclick=function(){toast('🎯 Orçamento: gastou '+brl0(out)+' de '+brl0(inc)+' · fixos '+brl0(fix));};
@@ -806,6 +806,58 @@ function openBillForm(id){bfEditId=id||null;var b=id?billsOf().find(function(x){
   var cc=document.getElementById("contasCard");if(cc)cc.onclick=openContas;
 })();
 function openContas(){renderContas();document.getElementById("contasSheet").classList.add("show");}
+
+/* ===== Detalhe dos cards (Ganhos/Gastos/Saldo/Guardado) ===== */
+(function(){
+  var st=document.createElement('style');
+  st.textContent='#cardSheet .cst{display:flex;gap:6px;margin-bottom:12px}#cardSheet .ct{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--bd);border-radius:10px;padding:9px;font-size:12px;font-weight:700;color:var(--mut);cursor:pointer}#cardSheet .ct.on{background:var(--a1);color:var(--aink);border-color:transparent}#cardSheet .cpane{display:none}#cardSheet .cpane.on{display:block}#cardSheet .drow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--bd)}#cardSheet .drow:first-child{border-top:0}#cardSheet .drow .em{width:34px;height:34px;border-radius:10px;background:var(--panel2);display:grid;place-items:center;font-size:15px;flex:0 0 auto}#cardSheet .drow .m{flex:1;min-width:0}#cardSheet .drow .m b{font-size:12.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#cardSheet .drow .m small{font-size:10px;color:var(--mut)}#cardSheet .drow .a{font-family:ui-monospace,monospace;font-weight:800;font-size:12.5px}#cardSheet .tot{display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);font-size:12px;color:var(--mut)}#cardSheet .tot b{font-family:ui-monospace,monospace}#cardSheet .rz{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px}#cardSheet .rz small{font-size:11px;color:var(--mut)}#cardSheet .rz b{font-size:16px;font-family:ui-monospace,monospace}#cardSheet .chead{display:flex;align-items:center;gap:10px;margin-bottom:12px}#cardSheet .chead .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:var(--sideb);flex:0 0 auto}#cardSheet .chead .big{margin-left:auto;font-size:19px;font-weight:800;font-family:ui-monospace,monospace}';
+  document.head.appendChild(st);
+  var ov=document.createElement('div');ov.className='modal';ov.id='cardSheet';
+  ov.innerHTML='<div class="sheet" style="max-width:440px"><div class="sheet-h"><span id="csTitle">Detalhes</span><button id="csClose">✕</button></div><div class="chead" id="csHead"></div><div class="cst" id="csTabs"></div><div class="cpane on" id="csMain"></div><div class="cpane" id="csFix"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.classList.remove('show');});
+  document.getElementById('csClose').onclick=function(){ov.classList.remove('show');};
+  function dfmt(d){d=d||'';return d.slice(8,10)+'/'+d.slice(5,7);}
+  function renderFix(){
+    var bills=Array.isArray(DATA.bills)?DATA.bills:[];var mo=ymNow();var paid=(DATA.billsPaid&&DATA.billsPaid[mo])||[];
+    var h='<div style="font-size:11.5px;color:var(--mut);margin-bottom:8px">Adicionar conta fixa</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="field">Nome</div><input class="inp" id="csfName" placeholder="Ex: Luz"></div><div><div class="field">Valor</div><input class="inp" id="csfVal" inputmode="decimal" placeholder="R$"></div></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="field">Vence dia</div><input class="inp" id="csfDay" inputmode="numeric" value="10"></div><div><div class="field">Emoji</div><input class="inp" id="csfEmoji" value="🧾"></div></div>'+
+    '<div class="field">Tipo</div><div class="tabs2" style="margin:0"><div class="tab2 on" data-t="fixa">🔒 Fixa</div><div class="tab2" data-t="flex">🔀 Flexível</div></div>'+
+    '<button class="gbtn save2" id="csfAdd" style="margin-top:12px">➕ Adicionar conta</button>'+
+    '<div style="font-size:11.5px;color:var(--mut);margin:16px 0 4px">Contas do mês</div><div id="csfList"></div>';
+    document.getElementById('csFix').innerHTML=h;
+    var tp='fixa';
+    document.querySelectorAll('#csFix .tab2').forEach(function(t){t.onclick=function(){tp=t.dataset.t;document.querySelectorAll('#csFix .tab2').forEach(function(x){x.classList.toggle('on',x===t);});};});
+    var list=document.getElementById('csfList');
+    if(!bills.length){list.innerHTML='<div style="color:var(--mut);font-size:11.5px;text-align:center;padding:12px 0">Nenhuma conta ainda.</div>';}
+    else{list.innerHTML=bills.map(function(b){var pg=paid.indexOf(b.id)>=0;return '<div class="billrow" style="padding:8px 0"><div class="em" style="width:30px;height:30px;font-size:13px">'+(b.emoji||"🧾")+'</div><div style="flex:1;min-width:0"><b style="font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+b.name+'</b><small style="font-size:9.5px;color:var(--mut)">'+(b.dueDay?'vence dia '+String(b.dueDay).padStart(2,"0"):'')+(b.fixed?' · fixa':' · flexível')+'</small></div><div class="amt" style="color:var(--neg);font-size:11.5px">'+brl0(b.amount)+'</div><button class="pg '+(pg?'pago':'pend')+'" data-bid="'+b.id+'" style="padding:4px 10px;font-size:9.5px">'+(pg?'✓ pago':'○ falta')+'</button></div>';}).join('');
+      list.querySelectorAll('[data-bid]').forEach(function(btn){btn.onclick=function(){var id=btn.dataset.bid;var m=ymNow();DATA.billsPaid=DATA.billsPaid||{};var arr=(DATA.billsPaid[m]||[]).slice();var i=arr.indexOf(id);if(i>=0)arr.splice(i,1);else arr.push(id);DATA.billsPaid[m]=arr;var isP=arr.indexOf(id)>=0;qk("bill_toggle",{billId:id,ym:m,paid:isP});if(window.renderContas)renderContas();renderFix();toast(isP?"✓ Marcada como paga":"○ Marcada como pendente");};});}
+    document.getElementById('csfAdd').onclick=function(){var name=document.getElementById('csfName').value.trim();if(!name){toast('Digite o nome');return;}var amount=parseFloat(document.getElementById('csfVal').value.replace(/\./g,'').replace(',','.'))||0;var dueDay=parseInt(document.getElementById('csfDay').value,10)||1;var emoji=document.getElementById('csfEmoji').value||'🧾';var nid='b'+Date.now();DATA.bills=DATA.bills||[];DATA.bills.push({id:nid,name:name,amount:amount,dueDay:dueDay,emoji:emoji,fixed:tp==='fixa'});qk("bill_new",{id:nid,name:name,amount:amount,dueDay:dueDay,emoji:emoji,fixed:tp==='fixa'});if(window.renderContas)renderContas();renderFix();toast('✅ Conta adicionada!');};
+  }
+  window.openCardSheet=function(card){
+    var D=DATA||{},ents=Array.isArray(D.entries)?D.entries:[],boxes=Array.isArray(D.boxes)?D.boxes:[];
+    var mo=ymNow();
+    var month=ents.filter(function(e){return (e.date||"").slice(0,7)===mo;}).slice().sort(function(a,b){return (b.date||"").localeCompare(a.date||"");});
+    var inc=0,out=0;month.forEach(function(e){var v=Number(e.amount)||0;if(e.type==="in")inc+=v;else out+=v;});
+    var saldo=inc-out,guardado=boxes.reduce(function(s,b){return s+(Number(b.saved)||0);},0);
+    var M={ganhos:{ic:"📈",t:"Ganhos",big:inc,col:"var(--pos)",tab:"Entradas"},gastos:{ic:"📉",t:"Gastos",big:out,col:"var(--neg)",tab:"Saídas"},saldo:{ic:"💰",t:"Saldo do mês",big:saldo,col:saldo>=0?"var(--pos)":"var(--neg)",tab:"Resumo"},guardado:{ic:"🐷",t:"Guardado",big:guardado,col:"var(--a1)",tab:"Caixinhas"}}[card];
+    document.getElementById('csTitle').textContent=M.t;
+    document.getElementById('csHead').innerHTML='<div class="ic">'+M.ic+'</div><div><div style="font-size:12px;color:var(--mut)">'+M.t+'</div><div style="font-size:10px;color:var(--mut)">'+MES[parseInt(mo.slice(5,7),10)-1]+'</div></div><div class="big" style="color:'+M.col+'">'+(card==="gastos"?"−":"")+brl0(M.big)+'</div>';
+    document.getElementById('csTabs').innerHTML='<div class="ct on" data-p="main">'+M.tab+'</div><div class="ct" data-p="fix">➕ Contas fixas</div>';
+    var mp=document.getElementById('csMain'),h='';
+    if(card==='ganhos'){var insL=month.filter(function(e){return e.type==='in';});h=insL.length?insL.map(function(e){return '<div class="drow"><div class="em">'+(CATEMO[e.cat]||"💰")+'</div><div class="m"><b>'+(e.desc||e.cat||"Entrada")+'</b><small>'+dfmt(e.date)+'</small></div><div class="a" style="color:var(--pos)">+'+brl0(e.amount)+'</div></div>';}).join('')+'<div class="tot"><span>Total que entrou</span><b style="color:var(--pos)">+'+brl0(inc)+'</b></div>':'<div style="color:var(--mut);font-size:12px;text-align:center;padding:16px 0">Nenhuma entrada neste mês.</div>';}
+    else if(card==='gastos'){var otsL=month.filter(function(e){return e.type!=='in';});h=otsL.length?otsL.map(function(e){return '<div class="drow"><div class="em">'+(CATEMO[e.cat]||"💠")+'</div><div class="m"><b>'+(e.desc||e.cat||"Gasto")+'</b><small>'+dfmt(e.date)+(e.cat?' · '+e.cat:'')+'</small></div><div class="a" style="color:var(--neg)">−'+brl0(e.amount)+'</div></div>';}).join('')+'<div class="tot"><span>Total que gastou</span><b style="color:var(--neg)">−'+brl0(out)+'</b></div>':'<div style="color:var(--mut);font-size:12px;text-align:center;padding:16px 0">Nenhum gasto neste mês.</div>';}
+    else if(card==='saldo'){h='<div class="rz"><small>Entrou</small><b style="color:var(--pos)">+'+brl0(inc)+'</b></div><div class="rz"><small>Gastou</small><b style="color:var(--neg)">−'+brl0(out)+'</b></div><div class="rz" style="background:linear-gradient(135deg,var(--a1),var(--a2));border:0"><small style="color:var(--aink);opacity:.85">'+(saldo>=0?'Sobrou':'Faltou')+'</small><b style="color:var(--aink)">'+brl0(Math.abs(saldo))+'</b></div>';}
+    else if(card==='guardado'){h=boxes.length?boxes.map(function(b){var p=b.target?Math.min(Math.round(b.saved/b.target*100),100):0;return '<div class="drow"><div class="em">'+(b.emoji||"🐷")+'</div><div class="m"><b>'+b.name+'</b><small>'+brl0(b.saved)+(b.target?' de '+brl0(b.target):'')+'</small><div style="height:5px;background:var(--bd);border-radius:20px;margin-top:5px;overflow:hidden"><i style="display:block;height:100%;width:'+Math.max(p,1)+'%;background:var(--a1)"></i></div></div><div class="a" style="color:var(--a1)">'+p+'%</div></div>';}).join('')+'<div class="tot"><span>Total guardado</span><b style="color:var(--a1)">'+brl0(guardado)+'</b></div>':'<div style="color:var(--mut);font-size:12px;text-align:center;padding:16px 0">Nenhuma caixinha ainda.</div>';}
+    mp.innerHTML=h;
+    renderFix();
+    document.getElementById('csMain').classList.add('on');document.getElementById('csFix').classList.remove('on');
+    document.querySelectorAll('#csTabs .ct').forEach(function(t){t.onclick=function(){document.querySelectorAll('#csTabs .ct').forEach(function(x){x.classList.remove('on');});t.classList.add('on');document.getElementById('csMain').classList.toggle('on',t.dataset.p==='main');document.getElementById('csFix').classList.toggle('on',t.dataset.p==='fix');};});
+    ov.classList.add('show');
+  };
+})();
+
 if("serviceWorker" in navigator){try{navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}catch(e){}}
 showSkel();
 load();
