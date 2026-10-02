@@ -382,7 +382,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
       <div class="motto">“Só o conhecimento tira o pobre da pobreza.”</div>
       <div class="sgrp">Geral</div>
       <div class="snav on"><span class="e">▦</span>Visão geral</div>
-      <div class="snav"><span class="e">📒</span>Lançamentos</div>
+      <div class="snav"><span class="e">📈</span>Ganhos</div>
       <div class="snav"><span class="e">🗂️</span>Categorias</div>
       <div class="snav"><span class="e">📈</span>Projeções</div>
       <div class="snav" data-href="gasto.html"><span class="e">➕</span>Adicionar gasto</div>
@@ -551,7 +551,7 @@ document.querySelectorAll(".snav").forEach(n=>n.onclick=()=>{if(n.dataset.href){
 document.querySelectorAll("[data-focus]").forEach(el=>el.onclick=()=>openIA());
 document.querySelectorAll("[data-toast]").forEach(el=>el.dataset.act||(el.onclick=()=>toast(el.dataset.toast)));
 document.querySelectorAll("[data-href]").forEach(el=>el.classList.contains("snav")||(el.onclick=()=>location.href=el.dataset.href));
-var _vt=document.getElementById("verTudo");if(_vt)_vt.onclick=function(){var n=[].slice.call(document.querySelectorAll(".snav")).filter(function(x){return x.textContent.indexOf("Lançamentos")>=0;})[0];if(n)n.click();};
+var _vt=document.getElementById("verTudo");if(_vt)_vt.onclick=function(){var n=[].slice.call(document.querySelectorAll(".snav")).filter(function(x){return x.textContent.indexOf("Ganhos")>=0;})[0];if(n)n.click();};
 // perfis
 document.querySelectorAll("#userSw .pf").forEach(p=>p.onclick=(e)=>{e.stopPropagation();document.querySelectorAll("#userSw .pf").forEach(x=>x.classList.remove("on"));p.classList.add("on");greetNow();toast("Perfil: "+profiles[p.dataset.prof].name);});
 function activeProf(){const el=document.querySelector("#userSw .pf.on");return el?el.dataset.prof:"me";}
@@ -767,7 +767,7 @@ initTips();
     if(t!=="add"&&t!=="mais"){document.querySelectorAll(".tabbar button").forEach(function(x){x.classList.remove("on");});b.classList.add("on");}
     if(t==="inicio"){window.scrollTo({top:0,behavior:"smooth"});}
     else if(t==="add"){location.href="gasto.html";}
-    else if(t==="lanc"){var n=byTxt("Lançamentos");if(n)n.click();}
+    else if(t==="lanc"){var n=byTxt("Ganhos");if(n)n.click();}
     else if(t==="caix"){var n=byTxt("Caixinhas");if(n)n.click();}
     else if(t==="mais"){document.getElementById("maisSheet").classList.add("show");}
   };});
@@ -887,7 +887,7 @@ load();
   function em(cat){var f=CATLIST.find(function(c){return c[1]===cat;});return f?f[0]:"💠";}
   function shiftM(mo,d){var y=+mo.slice(0,4),m=+mo.slice(5,7)-1+d;var dt=new Date(y,m,1);return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");}
   var ov=document.createElement("div");ov.className="modal";ov.id="lancView";
-  ov.innerHTML='<div class="sheet" style="max-width:460px"><div class="sheet-h"><span>📒 Lançamentos</span><button id="lancClose">✕</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><button class="gbtn" id="lancPrev" style="flex:0 0 auto;padding:8px 12px">‹</button><b id="lancMonthLbl" style="font-size:13px"></b><button class="gbtn" id="lancNext" style="flex:0 0 auto;padding:8px 12px">›</button></div><button class="gbtn save2" id="lancNew" style="margin-bottom:10px">➕ Novo lançamento</button><div id="lancList"></div></div>';
+  ov.innerHTML='<div class="sheet" style="max-width:460px"><div class="sheet-h"><span>📈 Ganhos</span><button id="lancClose">✕</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><button class="gbtn" id="lancPrev" style="flex:0 0 auto;padding:8px 12px">‹</button><b id="lancMonthLbl" style="font-size:13px"></b><button class="gbtn" id="lancNext" style="flex:0 0 auto;padding:8px 12px">›</button></div><button class="gbtn save2" id="lancNew" style="margin-bottom:10px">➕ Novo lançamento</button><div id="lancList"></div></div>';
   document.body.appendChild(ov);
   var fm=document.createElement("div");fm.className="modal";fm.id="lancForm";
   fm.innerHTML='<div class="sheet" style="max-width:400px"><div class="sheet-h"><span id="lfTitle">Novo</span><button id="lfClose">✕</button></div><div class="tabs2" id="lfTypeWrap"><div class="tab2 on" data-t="out">Saída</div><div class="tab2" data-t="in">Entrada</div></div><div class="field">Valor</div><input class="inp" id="lfVal" inputmode="decimal" placeholder="R$ 0,00"><div class="field">Categoria</div><select class="inp" id="lfCat"></select><div class="field">Este lançamento é</div><div class="tabs2" id="lfFixWrap"><div class="tab2 on" data-f="var">🔀 Variável</div><div class="tab2" data-f="fix">🔒 Fixo</div></div><div style="font-size:10px;color:var(--mut);margin-top:6px">🔒 Fixo = repete todo mês (salário, aluguel). 🔀 Variável = avulso (mercado, Uber).</div><div class="field">Descrição</div><input class="inp" id="lfDesc" placeholder="opcional"><div style="display:flex;gap:8px"><div style="flex:1"><div class="field">Data</div><input class="inp" id="lfDate" type="date"></div><div style="width:96px"><div class="field">Parcelas</div><input class="inp" id="lfParc" type="number" value="1" min="1"></div></div><div class="rowbtn"><button class="gbtn" id="lfDel" style="display:none;color:var(--neg)">🗑 Excluir</button><button class="gbtn save2" id="lfSave">Salvar</button></div><div id="lfMsg" style="text-align:center;font-size:12px;margin-top:8px"></div></div>';
@@ -919,7 +919,7 @@ load();
   document.getElementById("lancPrev").onclick=function(){lancMonth=shiftM(lancMonth,-1);renderLanc();};
   document.getElementById("lancNext").onclick=function(){lancMonth=shiftM(lancMonth,1);renderLanc();};
   function openLanc(){lancMonth=(new Date(Date.now()-3*3600*1000)).toISOString().slice(0,7);renderLanc();ov.classList.add("show");}
-  document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Lançamentos")>=0){n.removeAttribute("data-href");n.onclick=function(){openLanc();};}});
+  document.querySelectorAll(".snav").forEach(function(n){if(n.textContent.indexOf("Ganhos")>=0){n.removeAttribute("data-href");n.onclick=function(){openLanc();};}});
 })();
 
 /* ===== Caixinhas (view) ===== */
