@@ -127,6 +127,9 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
 .kpi.hi .mini i.a{opacity:.9}
 /* KPI Modelo B (tendencia + insight + sparkline) */
 .kpis .cb{background:linear-gradient(160deg,var(--panel2),color-mix(in srgb,var(--panel2) 82%,var(--a1) 7%));border:1px solid var(--bd);border-radius:16px;padding:13px;position:relative;overflow:hidden}
+.kpis .cbwide{grid-column:1 / -1;overflow:visible}
+.cb .fixin{border-top:1px solid var(--bd);margin-top:11px;padding-top:9px}
+.cb .fixin .fixinh{font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin-bottom:4px}
 .cb .rowt{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cb .ico{width:27px;height:27px;border-radius:8px;background:var(--sideb);display:grid;place-items:center;font-size:12px}
 .cb .pill{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap}
@@ -412,9 +415,6 @@ body{background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",syste
             <div id="gaugeSub" style="font-size:11px;color:var(--mut);text-align:center;line-height:1.5">—</div>
           </div>
         </div>
-        <div class="card" id="fixCard"><div class="ct">🔒 Gastos fixos <span class="dots" id="fixTot">···</span></div>
-          <div id="fixList"></div>
-        </div>
         <div class="card"><div class="ct">Maiores gastos <span class="dots">···</span></div>
           <div id="rank"></div>
         </div>
@@ -614,10 +614,10 @@ function render(){
   var savedPct=tgt>0?Math.round(guardado/tgt*100):0;
   var topCat=Object.keys(cat).sort(function(a,b){return cat[b]-cat[a];})[0];
   $("#kpis").innerHTML=
-    '<div class="cb"><div class="rowt"><div class="ico">📈</div><div class="pill up">▲ ok</div></div><div class="l">Ganhos</div><div class="v" data-count="'+inc+'">R$ 0</div><div class="ins"><b>'+incCount+' entrada'+(incCount===1?'':'s')+'</b> este mês</div>'+spk(incSeries,'var(--a1)')+'</div>'+
-    '<div class="cb"><div class="rowt"><div class="ico">📉</div><div class="pill '+(pctG>100?'dn':'nt')+'">'+(inc>0?pctG+'%':'—')+'</div></div><div class="l">Gastos</div><div class="v" data-count="'+out+'">R$ 0</div><div class="ins">'+(topCat?'maior: <b>'+topCat+'</b>':'sem gastos')+'</div>'+spk(outSeries,'var(--neg)')+'</div>'+
-    '<div class="cb"><div class="rowt"><div class="ico">💰</div><div class="pill '+(saldo>=0?'up':'dn')+'">'+(saldo>=0?'▲':'▼')+'</div></div><div class="l">Saldo do mês</div><div class="v" data-count="'+saldo+'" style="color:'+(saldo>=0?'var(--pos)':'var(--neg)')+'">R$ 0</div><div class="ins">'+(saldo>=0?'sobrou <b>'+brl0(saldo)+'</b>':'gastou <b>'+brl0(Math.abs(saldo))+'</b> a mais')+'</div>'+spk(balSeries,saldo>=0?'var(--a1)':'var(--neg)')+'</div>'+
-    '<div class="cb"><div class="rowt"><div class="ico">🐷</div><div class="pill nt">'+(tgt>0?savedPct+'%':'—')+'</div></div><div class="l">Guardado</div><div class="v" data-count="'+guardado+'">R$ 0</div><div class="ins">'+(tgt>0?'meta <b>'+brl0(tgt)+'</b>':'em '+boxes.length+' caixinhas')+'</div><div class="prog"><i style="width:'+Math.min(savedPct,100)+'%"></i></div></div>';
+    '<div class="cb cbwide" data-card="gastos"><div class="rowt"><div class="ico">📉</div><div class="pill '+(pctG>100?'dn':'nt')+'">'+(inc>0?pctG+'%':'—')+'</div></div><div class="l">Gastos</div><div class="v" data-count="'+out+'">R$ 0</div><div class="ins">'+(topCat?'maior: <b>'+topCat+'</b>':'sem gastos')+'</div>'+spk(outSeries,'var(--neg)')+(_fixed.length?'<div class="fixin"><div class="fixinh">🔒 Contas fixas</div>'+_fh+'</div>':'')+'</div>'+
+    '<div class="cb" data-card="ganhos"><div class="rowt"><div class="ico">📈</div><div class="pill up">▲ ok</div></div><div class="l">Ganhos</div><div class="v" data-count="'+inc+'">R$ 0</div><div class="ins"><b>'+incCount+' entrada'+(incCount===1?'':'s')+'</b> este mês</div>'+spk(incSeries,'var(--a1)')+'</div>'+
+    '<div class="cb" data-card="saldo"><div class="rowt"><div class="ico">💰</div><div class="pill '+(saldo>=0?'up':'dn')+'">'+(saldo>=0?'▲':'▼')+'</div></div><div class="l">Saldo do mês</div><div class="v" data-count="'+saldo+'" style="color:'+(saldo>=0?'var(--pos)':'var(--neg)')+'">R$ 0</div><div class="ins">'+(saldo>=0?'sobrou <b>'+brl0(saldo)+'</b>':'gastou <b>'+brl0(Math.abs(saldo))+'</b> a mais')+'</div>'+spk(balSeries,saldo>=0?'var(--a1)':'var(--neg)')+'</div>'+
+    '<div class="cb" data-card="guardado"><div class="rowt"><div class="ico">🐷</div><div class="pill nt">'+(tgt>0?savedPct+'%':'—')+'</div></div><div class="l">Guardado</div><div class="v" data-count="'+guardado+'">R$ 0</div><div class="ins">'+(tgt>0?'meta <b>'+brl0(tgt)+'</b>':'em '+boxes.length+' caixinhas')+'</div><div class="prog"><i style="width:'+Math.min(savedPct,100)+'%"></i></div></div>';
   document.querySelectorAll('#kpis .v[data-count]').forEach(function(el){countUp(el,Number(el.dataset.count));});
 
   // ---- gauge: orçamento do mês (gasto ÷ ganho) ----
@@ -659,11 +659,7 @@ function render(){
   $("#firstMsg").innerHTML="Em <b>"+monNome+"</b> você gastou <b>"+brl0(out)+"</b> e recebeu <b>"+brl0(inc)+"</b>. Saldo do mês: <b style='color:"+(saldo>=0?'var(--pos)':'var(--neg)')+"'>"+brl0(saldo)+"</b>.";
   window._agg={inc,out,saldo,guardado,fix,cat,top,monNome,boxes};if(window.renderBrand)renderBrand();
   // ---- tocar nos cards principais mostra o dado na hora ----
-  var kEls=document.querySelectorAll('#kpis .cb');kEls.forEach(function(k){k.style.cursor='pointer';});
-  if(kEls[0])kEls[0].onclick=function(){openCardSheet('ganhos');};
-  if(kEls[1])kEls[1].onclick=function(){openCardSheet('gastos');};
-  if(kEls[2])kEls[2].onclick=function(){openCardSheet('saldo');};
-  if(kEls[3])kEls[3].onclick=function(){openCardSheet('guardado');};
+  var kEls=document.querySelectorAll('#kpis .cb');kEls.forEach(function(k){k.style.cursor='pointer';k.onclick=function(){openCardSheet(k.dataset.card);};});
   // ---- toque nos cards do meio → resumo rápido ----
   var cMid=document.querySelectorAll('.mid .card');cMid.forEach(function(c){c.style.cursor='pointer';});
   if(cMid[0])cMid[0].onclick=function(){toast('🎯 Orçamento: gastou '+brl0(out)+' de '+brl0(inc)+' · fixos '+brl0(fix));};
